@@ -1,0 +1,15 @@
+{
+  "name": "@portalpro/config",
+  "version": "0.0.0",
+  "private": true,
+  "license": "MIT",
+  "main": "./src/tailwind-preset.ts",
+  "types": "./src/tailwind-preset.ts",
+  "exports": {
+    "./tailwind": "./src/tailwind-preset.ts",
+    "./postcss": "./src/postcss.config.js"
+  },
+  "dependencies": {
+    "tailwindcss": "3.4.17"
+  }
+}

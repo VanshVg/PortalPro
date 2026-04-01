@@ -1,0 +1,22 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* White-label: these are overridden per-tenant via server-side injection */
+    --portal-primary: #1B4D6E;
+    --portal-primary-light: #2E86AB;
+    --portal-accent: #E8B931;
+    --font-sans: "Inter", system-ui, -apple-system, sans-serif;
+  }
+
+  body {
+    @apply bg-neutral-100 text-neutral-800 antialiased;
+    font-family: var(--font-sans);
+  }
+
+  *:focus-visible {
+    @apply outline-none ring-2 ring-primary/20 ring-offset-2;
+  }
+}

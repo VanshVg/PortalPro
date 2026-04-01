@@ -1,0 +1,11 @@
+{
+  "name": "@portalpro/prettier-config",
+  "version": "0.0.0",
+  "private": true,
+  "license": "MIT",
+  "main": ".prettierrc.json",
+  "files": [".prettierrc.json"],
+  "dependencies": {
+    "prettier-plugin-tailwindcss": "0.6.9"
+  }
+}

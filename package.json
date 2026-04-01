@@ -1,0 +1,34 @@
+{
+  "name": "portalpro",
+  "version": "0.1.0",
+  "private": true,
+  "description": "White-Label Client Portal Builder for Agencies & Consultants",
+  "scripts": {
+    "dev": "turbo dev",
+    "build": "turbo build",
+    "lint": "turbo lint",
+    "lint:fix": "turbo lint:fix",
+    "typecheck": "turbo typecheck",
+    "test": "turbo test",
+    "test:e2e": "turbo test:e2e",
+    "clean": "turbo clean",
+    "db:migrate": "turbo db:migrate --filter=@portalpro/database",
+    "db:push": "turbo db:push --filter=@portalpro/database",
+    "db:seed": "turbo db:seed --filter=@portalpro/database",
+    "db:studio": "turbo db:studio --filter=@portalpro/database",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md}\""
+  },
+  "devDependencies": {
+    "@portalpro/eslint-config": "workspace:*",
+    "@portalpro/prettier-config": "workspace:*",
+    "@portalpro/tsconfig": "workspace:*",
+    "prettier": "3.4.2",
+    "turbo": "2.3.3",
+    "typescript": "5.7.3"
+  },
+  "packageManager": "pnpm@10.33.0",
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

@@ -1,0 +1,27 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --font-sans: "Inter", system-ui, -apple-system, sans-serif;
+    --font-mono: "JetBrains Mono", Menlo, Consolas, monospace;
+  }
+
+  body {
+    @apply bg-neutral-100 text-neutral-800 antialiased;
+    font-family: var(--font-sans);
+  }
+
+  /* Smooth focus rings for keyboard navigation */
+  *:focus-visible {
+    @apply outline-none ring-2 ring-primary/20 ring-offset-2;
+  }
+}
+
+@layer components {
+  /* Skeleton shimmer effect */
+  .skeleton {
+    @apply animate-shimmer rounded bg-gradient-to-r from-neutral-200 via-neutral-100 to-neutral-200 bg-[length:200%_100%];
+  }
+}
