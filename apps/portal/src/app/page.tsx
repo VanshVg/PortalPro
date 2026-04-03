@@ -1,16 +1,12 @@
 import { Card, CardContent, CardHeader, CardTitle, Button } from "@portalpro/ui";
+import Image from "next/image";
 
 export default function PortalHomePage() {
   return (
     <div className="flex min-h-screen flex-col">
       {/* Header */}
       <header className="flex h-16 items-center justify-between border-b border-neutral-200 bg-white px-6">
-        <div className="flex items-center gap-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-sm font-bold text-white">
-            P
-          </div>
-          <span className="text-lg font-semibold text-neutral-800">Client Portal</span>
-        </div>
+        <Image src="/logo-full.png" alt="PortalPro" width={120} height={30} priority />
         <Button variant="ghost" size="sm">
           Sign In
         </Button>

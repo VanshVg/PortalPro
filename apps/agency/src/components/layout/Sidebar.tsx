@@ -13,6 +13,7 @@ import {
   ChevronLeft,
   LogOut,
 } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
@@ -44,12 +45,13 @@ export function Sidebar() {
     >
       {/* Logo */}
       <div className="flex h-16 items-center justify-between border-b border-neutral-200 px-4">
-        {!collapsed && (
-          <Link href="/" className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent text-sm font-bold text-neutral-900">
-              P
-            </div>
-            <span className="text-lg font-bold text-primary-dark">PortalPro</span>
+        {collapsed ? (
+          <Link href="/" aria-label="PortalPro home">
+            <Image src="/logo-icon.png" alt="PortalPro" width={32} height={32} priority />
+          </Link>
+        ) : (
+          <Link href="/">
+            <Image src="/logo-full.png" alt="PortalPro" width={130} height={32} priority />
           </Link>
         )}
         <button

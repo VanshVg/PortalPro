@@ -2,7 +2,8 @@
   "extends": "@portalpro/tsconfig/library.json",
   "compilerOptions": {
     "outDir": "./dist",
-    "rootDir": "./src"
+    "rootDir": "./src",
+    "lib": ["ES2022"]
   },
   "include": ["src/**/*.ts"]
 }

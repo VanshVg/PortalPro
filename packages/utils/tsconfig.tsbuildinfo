@@ -1,0 +1,1 @@
+{"root":["./src/constants.ts","./src/index.ts","./src/formatting/currency.ts","./src/formatting/date.ts","./src/formatting/string.ts","./src/validation/color.ts","./src/validation/email.ts","./src/validation/slug.ts"],"version":"5.7.3"}

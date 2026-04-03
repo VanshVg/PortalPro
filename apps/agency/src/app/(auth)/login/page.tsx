@@ -1,11 +1,12 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, Button, Input } from "@portalpro/ui";
+import Image from "next/image";
 
 export default function LoginPage() {
   return (
     <Card className="shadow-modal">
       <CardHeader className="text-center">
-        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-accent text-xl font-bold text-neutral-900">
-          P
+        <div className="mx-auto mb-4">
+          <Image src="/logo-icon.png" alt="PortalPro" width={48} height={48} priority />
         </div>
         <CardTitle className="text-2xl">Welcome back</CardTitle>
         <CardDescription>Sign in to your agency dashboard</CardDescription>

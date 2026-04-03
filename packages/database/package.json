@@ -9,11 +9,11 @@
     "build": "tsc -b",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src/",
-    "db:migrate": "prisma migrate dev",
-    "db:push": "prisma db push",
-    "db:seed": "tsx prisma/seed.ts",
-    "db:studio": "prisma studio",
-    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev --env-file ../../.env",
+    "db:push": "prisma db push --env-file ../../.env",
+    "db:seed": "tsx --env-file ../../.env prisma/seed.ts",
+    "db:studio": "prisma studio --env-file ../../.env",
+    "db:generate": "prisma generate --env-file ../../.env",
     "clean": "rm -rf dist .turbo"
   },
   "dependencies": {
@@ -22,6 +22,7 @@
   "devDependencies": {
     "@portalpro/eslint-config": "workspace:*",
     "@portalpro/tsconfig": "workspace:*",
+    "@types/node": "22.10.5",
     "eslint": "8.57.1",
     "prisma": "6.2.1",
     "tsx": "4.19.2",
