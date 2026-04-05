@@ -6,8 +6,13 @@
   "main": "./src/tailwind-preset.ts",
   "types": "./src/tailwind-preset.ts",
   "exports": {
-    "./tailwind": "./src/tailwind-preset.ts",
-    "./postcss": "./src/postcss.config.js"
+    "./tailwind": {
+      "types": "./src/tailwind-preset.ts",
+      "default": "./src/tailwind-preset.ts"
+    },
+    "./postcss": {
+      "default": "./src/postcss.config.js"
+    }
   },
   "dependencies": {
     "tailwindcss": "3.4.17"

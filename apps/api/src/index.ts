@@ -4,6 +4,8 @@ import helmet from "helmet";
 
 import { errorMiddleware } from "./middleware/error.middleware";
 import { requestIdMiddleware } from "./middleware/request-id.middleware";
+import { authMiddleware } from "./middleware/auth.middleware";
+import { tenantMiddleware } from "./middleware/tenant.middleware";
 import { logger } from "./lib/logger";
 
 const app = express();
@@ -21,13 +23,18 @@ app.use(helmet());
 app.use(express.json({ limit: "10mb" }));
 app.use(requestIdMiddleware);
 
-// ===== Health Check =====
+// ===== Public Routes =====
 app.get("/health", (_req, res) => {
   res.json({ status: "ok", timestamp: new Date().toISOString() });
 });
 
-// ===== API Routes =====
-app.get("/api/v1", (_req, res) => {
+// ===== Protected API =====
+// All /api/v1/* routes require authentication + tenant resolution
+const apiRouter = express.Router();
+apiRouter.use(authMiddleware);
+apiRouter.use(tenantMiddleware);
+
+apiRouter.get("/", (_req, res) => {
   res.json({
     name: "PortalPro API",
     version: "0.1.0",
@@ -35,11 +42,17 @@ app.get("/api/v1", (_req, res) => {
   });
 });
 
-// Route registration will be added here as modules are implemented:
-// app.use("/api/v1/auth", authRoutes);
-// app.use("/api/v1/tenants", tenantRoutes);
-// app.use("/api/v1/portals", portalRoutes);
-// app.use("/api/v1/projects", projectRoutes);
+// Route registration (added as modules are implemented):
+// apiRouter.use("/auth", authRoutes);
+// apiRouter.use("/tenants", tenantRoutes);
+// apiRouter.use("/portals", portalRoutes);
+// apiRouter.use("/projects", projectRoutes);
+// apiRouter.use("/tasks", taskRoutes);
+// apiRouter.use("/files", fileRoutes);
+// apiRouter.use("/messages", messageRoutes);
+// apiRouter.use("/invoices", invoiceRoutes);
+
+app.use("/api/v1", apiRouter);
 
 // ===== Error Handler (must be last) =====
 app.use(errorMiddleware);

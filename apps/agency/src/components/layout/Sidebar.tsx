@@ -1,6 +1,15 @@
 "use client";
 
-import { cn } from "@portalpro/ui";
+import {
+  cn,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  Button,
+} from "@portalpro/ui";
 import {
   LayoutDashboard,
   Users,
@@ -12,11 +21,13 @@ import {
   Webhook,
   ChevronLeft,
   LogOut,
+  AlertTriangle,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useState, useTransition } from "react";
+import { logoutAction } from "@/lib/auth-actions";
 
 const mainNavItems = [
   { label: "Dashboard", href: "/", icon: LayoutDashboard },
@@ -32,9 +43,36 @@ const settingsNavItems = [
   { label: "Integrations", href: "/settings/integrations", icon: Webhook },
 ];
 
-export function Sidebar() {
+interface SidebarProps {
+  user: {
+    name: string;
+    email: string;
+    role: string | null;
+    image?: string | null;
+  };
+}
+
+export function Sidebar({ user }: SidebarProps) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
+  const [showLogoutDialog, setShowLogoutDialog] = useState(false);
+  const [, startTransition] = useTransition();
+
+  const initials = user.name
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+
+  const roleLabel =
+    user.role === "OWNER"
+      ? "Agency Owner"
+      : user.role === "ADMIN"
+        ? "Admin"
+        : user.role === "EDITOR"
+          ? "Editor"
+          : "Viewer";
 
   return (
     <aside
@@ -131,21 +169,56 @@ export function Sidebar() {
       <div className="border-t border-neutral-200 p-3">
         <div className={cn("flex items-center gap-3 rounded-lg px-3 py-2", collapsed && "justify-center px-2")}>
           <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary-50 text-sm font-semibold text-primary">
-            JD
+            {initials}
           </div>
           {!collapsed && (
             <div className="flex-1 overflow-hidden">
-              <p className="truncate text-sm font-medium text-neutral-800">John Doe</p>
-              <p className="truncate text-xs text-neutral-500">Agency Owner</p>
+              <p className="truncate text-sm font-medium text-neutral-800">{user.name}</p>
+              <p className="truncate text-xs text-neutral-500">{roleLabel}</p>
             </div>
           )}
           {!collapsed && (
-            <button className="rounded-lg p-1.5 text-neutral-400 hover:bg-neutral-100 hover:text-neutral-600" aria-label="Sign out">
+            <button
+              onClick={() => setShowLogoutDialog(true)}
+              className="rounded-lg p-1.5 text-neutral-400 hover:bg-neutral-100 hover:text-neutral-600"
+              aria-label="Sign out"
+            >
               <LogOut className="h-4 w-4" />
             </button>
           )}
         </div>
       </div>
+
+      {/* Logout confirmation dialog */}
+      <Dialog open={showLogoutDialog} onOpenChange={setShowLogoutDialog}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <div className="mb-2 flex items-center gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-error/10">
+                <AlertTriangle className="h-5 w-5 text-error" />
+              </div>
+              <DialogTitle className="text-lg">Sign out of PortalPro?</DialogTitle>
+            </div>
+            <DialogDescription className="text-sm text-neutral-500 leading-relaxed">
+              You&apos;re signed in as <span className="font-medium text-neutral-700">{user.email}</span>.
+              You&apos;ll need to enter your password to get back in.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="mt-2 flex gap-2 sm:gap-2">
+            <Button variant="outline" className="flex-1" onClick={() => setShowLogoutDialog(false)}>
+              Stay signed in
+            </Button>
+            <Button
+              variant="destructive"
+              className="flex-1"
+              onClick={() => startTransition(() => logoutAction())}
+            >
+              <LogOut className="mr-2 h-4 w-4" />
+              Sign out
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </aside>
   );
 }

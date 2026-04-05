@@ -1,8 +1,7 @@
 // ============================================
-// @portalpro/email — Email Templates (React Email)
+// @portalpro/email — Email Templates & Mailer
 // ============================================
 
-// Templates will be added as they are implemented:
-// export { WelcomeEmail } from "./templates/WelcomeEmail";
-// export { InvitationEmail } from "./templates/InvitationEmail";
-// export { NotificationEmail } from "./templates/NotificationEmail";
+export { VerifyEmail } from "./templates/VerifyEmail";
+export { ResetPassword } from "./templates/ResetPassword";
+export { sendVerificationEmail, sendPasswordResetEmail } from "./mailer";

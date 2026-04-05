@@ -3,7 +3,22 @@
 import { Button } from "@portalpro/ui";
 import { Bell, Menu, Search } from "lucide-react";
 
-export function Header() {
+interface HeaderProps {
+  user: {
+    name: string;
+    email: string;
+    image?: string | null;
+  };
+}
+
+export function Header({ user }: HeaderProps) {
+  const initials = user.name
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+
   return (
     <header className="flex h-16 items-center justify-between border-b border-neutral-200 bg-white px-4 lg:px-8">
       {/* Left: Mobile menu + Breadcrumbs */}
@@ -15,11 +30,11 @@ export function Header() {
           <Menu className="h-5 w-5" />
         </button>
         <nav className="hidden text-sm text-neutral-500 lg:block">
-          <span className="text-neutral-800 font-medium">Dashboard</span>
+          <span className="font-medium text-neutral-800">Dashboard</span>
         </nav>
       </div>
 
-      {/* Right: Search, Notifications, User */}
+      {/* Right: Search, Notifications, User Avatar */}
       <div className="flex items-center gap-2">
         <Button variant="ghost" size="icon" aria-label="Search">
           <Search className="h-5 w-5" />
@@ -31,8 +46,11 @@ export function Header() {
             <span className="relative inline-flex h-2 w-2 rounded-full bg-accent" />
           </span>
         </Button>
-        <div className="ml-2 flex h-8 w-8 items-center justify-center rounded-full bg-primary-50 text-sm font-semibold text-primary">
-          JD
+        <div
+          className="ml-2 flex h-8 w-8 items-center justify-center rounded-full bg-primary-50 text-sm font-semibold text-primary"
+          title={user.name}
+        >
+          {initials}
         </div>
       </div>
     </header>

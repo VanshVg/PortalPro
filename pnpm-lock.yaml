@@ -35,9 +35,15 @@ importers:
       '@portalpro/auth':
         specifier: workspace:*
         version: link:../../packages/auth
+      '@portalpro/config':
+        specifier: workspace:*
+        version: link:../../packages/config
       '@portalpro/database':
         specifier: workspace:*
         version: link:../../packages/database
+      '@portalpro/email':
+        specifier: workspace:*
+        version: link:../../packages/email
       '@portalpro/types':
         specifier: workspace:*
         version: link:../../packages/types
@@ -47,12 +53,18 @@ importers:
       '@portalpro/utils':
         specifier: workspace:*
         version: link:../../packages/utils
+      bcryptjs:
+        specifier: 2.4.3
+        version: 2.4.3
       lucide-react:
         specifier: 0.468.0
         version: 0.468.0(react@18.3.1)
       next:
         specifier: 14.2.23
         version: 14.2.23(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      next-auth:
+        specifier: 5.0.0-beta.25
+        version: 5.0.0-beta.25(next@14.2.23(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(nodemailer@6.9.16)(react@18.3.1)
       next-themes:
         specifier: 0.4.4
         version: 0.4.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -69,6 +81,9 @@ importers:
       '@portalpro/tsconfig':
         specifier: workspace:*
         version: link:../../tooling/typescript
+      '@types/bcryptjs':
+        specifier: 2.4.6
+        version: 2.4.6
       '@types/node':
         specifier: 22.10.5
         version: 22.10.5
@@ -96,6 +111,9 @@ importers:
 
   apps/api:
     dependencies:
+      '@panva/hkdf':
+        specifier: 1.2.1
+        version: 1.2.1
       '@portalpro/database':
         specifier: workspace:*
         version: link:../../packages/database
@@ -105,6 +123,9 @@ importers:
       '@portalpro/utils':
         specifier: workspace:*
         version: link:../../packages/utils
+      cookie:
+        specifier: 0.7.2
+        version: 0.7.2
       cors:
         specifier: 2.8.5
         version: 2.8.5
@@ -114,6 +135,9 @@ importers:
       helmet:
         specifier: 8.0.0
         version: 8.0.0
+      jose:
+        specifier: 5.9.6
+        version: 5.9.6
       pino:
         specifier: 9.6.0
         version: 9.6.0
@@ -130,6 +154,9 @@ importers:
       '@portalpro/tsconfig':
         specifier: workspace:*
         version: link:../../tooling/typescript
+      '@types/cookie':
+        specifier: 0.6.0
+        version: 0.6.0
       '@types/cors':
         specifier: 2.8.17
         version: 2.8.17
@@ -154,6 +181,9 @@ importers:
       '@portalpro/auth':
         specifier: workspace:*
         version: link:../../packages/auth
+      '@portalpro/config':
+        specifier: workspace:*
+        version: link:../../packages/config
       '@portalpro/database':
         specifier: workspace:*
         version: link:../../packages/database
@@ -166,12 +196,18 @@ importers:
       '@portalpro/utils':
         specifier: workspace:*
         version: link:../../packages/utils
+      bcryptjs:
+        specifier: 2.4.3
+        version: 2.4.3
       lucide-react:
         specifier: 0.468.0
         version: 0.468.0(react@18.3.1)
       next:
         specifier: 14.2.23
         version: 14.2.23(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      next-auth:
+        specifier: 5.0.0-beta.25
+        version: 5.0.0-beta.25(next@14.2.23(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(nodemailer@6.9.16)(react@18.3.1)
       next-themes:
         specifier: 0.4.4
         version: 0.4.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -188,6 +224,9 @@ importers:
       '@portalpro/tsconfig':
         specifier: workspace:*
         version: link:../../tooling/typescript
+      '@types/bcryptjs':
+        specifier: 2.4.6
+        version: 2.4.6
       '@types/node':
         specifier: 22.10.5
         version: 22.10.5
@@ -226,7 +265,7 @@ importers:
         version: 2.4.3
       next-auth:
         specifier: 5.0.0-beta.25
-        version: 5.0.0-beta.25(next@14.2.23(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react@18.3.1)
+        version: 5.0.0-beta.25(next@14.2.23(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(nodemailer@6.9.16)(react@18.3.1)
     devDependencies:
       '@portalpro/eslint-config':
         specifier: workspace:*
@@ -258,6 +297,9 @@ importers:
       '@prisma/client':
         specifier: 6.2.1
         version: 6.2.1(prisma@6.2.1)
+      bcryptjs:
+        specifier: 2.4.3
+        version: 2.4.3
     devDependencies:
       '@portalpro/eslint-config':
         specifier: workspace:*
@@ -265,6 +307,9 @@ importers:
       '@portalpro/tsconfig':
         specifier: workspace:*
         version: link:../../tooling/typescript
+      '@types/bcryptjs':
+        specifier: 2.4.6
+        version: 2.4.6
       '@types/node':
         specifier: 22.10.5
         version: 22.10.5
@@ -286,6 +331,9 @@ importers:
       '@react-email/components':
         specifier: 0.0.31
         version: 0.0.31(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      nodemailer:
+        specifier: 6.9.16
+        version: 6.9.16
       react:
         specifier: 18.3.1
         version: 18.3.1
@@ -299,6 +347,9 @@ importers:
       '@portalpro/tsconfig':
         specifier: workspace:*
         version: link:../../tooling/typescript
+      '@types/nodemailer':
+        specifier: 6.4.17
+        version: 6.4.17
       '@types/react':
         specifier: 18.3.18
         version: 18.3.18
@@ -1772,6 +1823,9 @@ packages:
   '@types/node@22.10.5':
     resolution: {integrity: sha512-F8Q+SeGimwOo86fiovQh8qiXfFEh2/ocYv7tU5pJ3EXMSSxk1Joj5wefpFK2fHTf/N6HKGSxIDBT9f3gCxXPkQ==}
 
+  '@types/nodemailer@6.4.17':
+    resolution: {integrity: sha512-I9CCaIp6DTldEg7vyUTZi8+9Vo0hi1/T8gv3C89yk1rSAAzoKQ8H8ki/jBYJSFoH/BisgLP8tkZMlQ91CIquww==}
+
   '@types/prop-types@15.7.15':
     resolution: {integrity: sha512-F6bEyamV9jKGAFBEmlQnesRPGOQqS2+Uwi0Em15xenOxHaf2hv6L8YCVn3rPdPJOiJfPiCnLIRyvwVaqMY3MIw==}
 
@@ -2117,6 +2171,10 @@ packages:
 
   cookie@0.7.1:
     resolution: {integrity: sha512-6DnInpx7SJ2AK3+CTUE/ZM0vWTUboZCegxhC2xiIydHR9jNuTAASBrfEpHhiGOZw/nX51bHt6YQl8jsGo4y/0w==}
+    engines: {node: '>= 0.6'}
+
+  cookie@0.7.2:
+    resolution: {integrity: sha512-yki5XnKuf750l50uGTllt6kKILY4nQ1eNIQatoXEByZ5dWgnKqbnqmTrBE5B4N7lrMJKQ2ytWMiTO2o0v6Ew/w==}
     engines: {node: '>= 0.6'}
 
   cors@2.8.5:
@@ -2779,8 +2837,8 @@ packages:
     resolution: {integrity: sha512-/imKNG4EbWNrVjoNC/1H5/9GFy+tqjGBHCaSsN+P2RnPqjsLmv6UD3Ej+Kj8nBWaRAwyk7kK5ZUc+OEatnTR3A==}
     hasBin: true
 
-  jose@5.10.0:
-    resolution: {integrity: sha512-s+3Al/p9g32Iq+oqXxkW//7jk2Vig6FF1CFqzVXoTUXt2qz89YWbL+OwS17NFYEvxC35n0FKeGO2LGYSxeM2Gg==}
+  jose@5.9.6:
+    resolution: {integrity: sha512-AMlnetc9+CV9asI19zHmrgS/WYsWUwCn2R7RzlbJWD7F9eWYUTGyBmU9o6PxngtLGOiDGPRu+Uc4fhKzbpteZQ==}
 
   joycon@3.1.1:
     resolution: {integrity: sha512-34wB/Y7MW7bzjKRjUKTa46I2Z7eV62Rkhva+KkopW7Qvv/OSWBqvkSY7vusOPrNuZcUG3tApvdVgNB8POj3SPw==}
@@ -2980,6 +3038,10 @@ packages:
 
   node-releases@2.0.36:
     resolution: {integrity: sha512-TdC8FSgHz8Mwtw9g5L4gR/Sh9XhSP/0DEkQxfEFXOpiul5IiHgHan2VhYYb6agDSfp4KuvltmGApc8HMgUrIkA==}
+
+  nodemailer@6.9.16:
+    resolution: {integrity: sha512-psAuZdTIRN08HKVd/E8ObdV6NO7NTBY3KsC30F7M4H1OnmLCUNaS56FpYxyb26zWLSyYF9Ozch9KYHhHegsiOQ==}
+    engines: {node: '>=6.0.0'}
 
   normalize-path@3.0.0:
     resolution: {integrity: sha512-6eZs5Ls3WtCisHWp9S2GUy8dqkpGi4BVSz3GaqiE6ezub0512ESztXUwUB6C6IKbQkY2Pnb/mD4WYojCRwcwLA==}
@@ -3881,15 +3943,17 @@ snapshots:
 
   '@alloc/quick-lru@5.2.0': {}
 
-  '@auth/core@0.37.2':
+  '@auth/core@0.37.2(nodemailer@6.9.16)':
     dependencies:
       '@panva/hkdf': 1.2.1
       '@types/cookie': 0.6.0
       cookie: 0.7.1
-      jose: 5.10.0
+      jose: 5.9.6
       oauth4webapi: 3.8.5
       preact: 10.11.3
       preact-render-to-string: 5.2.3(preact@10.11.3)
+    optionalDependencies:
+      nodemailer: 6.9.16
 
   '@emnapi/runtime@1.9.2':
     dependencies:
@@ -4895,6 +4959,10 @@ snapshots:
     dependencies:
       undici-types: 6.20.0
 
+  '@types/nodemailer@6.4.17':
+    dependencies:
+      '@types/node': 22.10.5
+
   '@types/prop-types@15.7.15': {}
 
   '@types/qs@6.15.0': {}
@@ -5311,6 +5379,8 @@ snapshots:
   cookie-signature@1.0.6: {}
 
   cookie@0.7.1: {}
+
+  cookie@0.7.2: {}
 
   cors@2.8.5:
     dependencies:
@@ -6173,7 +6243,7 @@ snapshots:
 
   jiti@1.21.7: {}
 
-  jose@5.10.0: {}
+  jose@5.9.6: {}
 
   joycon@3.1.1: {}
 
@@ -6297,11 +6367,13 @@ snapshots:
 
   negotiator@0.6.3: {}
 
-  next-auth@5.0.0-beta.25(next@14.2.23(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react@18.3.1):
+  next-auth@5.0.0-beta.25(next@14.2.23(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(nodemailer@6.9.16)(react@18.3.1):
     dependencies:
-      '@auth/core': 0.37.2
+      '@auth/core': 0.37.2(nodemailer@6.9.16)
       next: 14.2.23(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       react: 18.3.1
+    optionalDependencies:
+      nodemailer: 6.9.16
 
   next-themes@0.4.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
     dependencies:
@@ -6341,6 +6413,8 @@ snapshots:
       semver: 6.3.1
 
   node-releases@2.0.36: {}
+
+  nodemailer@6.9.16: {}
 
   normalize-path@3.0.0: {}
 

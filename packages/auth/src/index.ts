@@ -4,3 +4,4 @@
 
 export { hasMinimumRole, requireRole, ROLE_HIERARCHY } from "./rbac";
 export type { SessionUser } from "./types";
+export { authConfig } from "./auth.config";
