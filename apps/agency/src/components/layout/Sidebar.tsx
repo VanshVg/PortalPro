@@ -25,7 +25,7 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { useState, useTransition } from "react";
 import { logoutAction } from "@/lib/auth-actions";
 
@@ -38,9 +38,9 @@ const mainNavItems = [
 ];
 
 const settingsNavItems = [
-  { label: "Workspace", href: "/settings", icon: Settings },
-  { label: "Team", href: "/settings/team", icon: UsersRound },
-  { label: "Integrations", href: "/settings/integrations", icon: Webhook },
+  { label: "Workspace", href: "/settings?tab=general", icon: Settings },
+  { label: "Team", href: "/settings?tab=team", icon: UsersRound },
+  { label: "Integrations", href: "/settings?tab=integrations", icon: Webhook },
 ];
 
 interface SidebarProps {
@@ -54,6 +54,7 @@ interface SidebarProps {
 
 export function Sidebar({ user }: SidebarProps) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [collapsed, setCollapsed] = useState(false);
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
   const [, startTransition] = useTransition();
@@ -144,7 +145,11 @@ export function Sidebar({ user }: SidebarProps) {
           Settings
         </p>
         {settingsNavItems.map((item) => {
-          const isActive = pathname === item.href;
+          // Match on the full href (pathname + query) for settings tabs
+          const [itemPath, itemQuery] = item.href.split("?");
+          const itemTab = new URLSearchParams(itemQuery ?? "").get("tab");
+          const currentTab = searchParams.get("tab");
+          const isActive = pathname === itemPath && (itemTab ? currentTab === itemTab : !currentTab || currentTab === "general");
           return (
             <Link
               key={item.href}

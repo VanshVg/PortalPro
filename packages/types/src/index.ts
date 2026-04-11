@@ -32,6 +32,11 @@ export type {
   InvoiceResponse,
   ClientPortalResponse,
   TenantMemberResponse,
+  ClientPortalAccessResponse,
+  MessageAttachmentResponse,
+  CommentResponse,
+  TimeEntryResponse,
+  FolderResponse,
 } from "./api-contracts";
 
 // Zod Schemas (shared between API validation and frontend forms)
@@ -41,10 +46,25 @@ export {
   createTaskSchema,
   updateTaskSchema,
   createMilestoneSchema,
+  updateMilestoneSchema,
+  reorderMilestonesSchema,
+  reorderTasksSchema,
+  createCommentSchema,
+  createTimeEntrySchema,
+  updateTimeEntrySchema,
   createInvoiceSchema,
   createMessageSchema,
   createDeliverableSchema,
   paginationSchema,
+  updateTenantSchema,
+  inviteMemberSchema,
+  updateMemberRoleSchema,
+  createPortalSchema,
+  updatePortalSchema,
+  inviteClientSchema,
+  requestPresignedUrlSchema,
+  confirmUploadSchema,
+  createFolderSchema,
 } from "./schemas";
 
 export type {
@@ -53,10 +73,25 @@ export type {
   CreateTaskInput,
   UpdateTaskInput,
   CreateMilestoneInput,
+  UpdateMilestoneInput,
+  ReorderMilestonesInput,
+  ReorderTasksInput,
+  CreateCommentInput,
+  CreateTimeEntryInput,
+  UpdateTimeEntryInput,
   CreateInvoiceInput,
   CreateMessageInput,
   CreateDeliverableInput,
   PaginationInput,
+  UpdateTenantInput,
+  InviteMemberInput,
+  UpdateMemberRoleInput,
+  CreatePortalInput,
+  UpdatePortalInput,
+  InviteClientInput,
+  RequestPresignedUrlInput,
+  ConfirmUploadInput,
+  CreateFolderInput,
 } from "./schemas";
 
 // API Response Wrapper

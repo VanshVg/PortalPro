@@ -50,6 +50,18 @@ export function errorMiddleware(
     return;
   }
 
+  // Handle Prisma connection / initialization errors with a clean 503
+  if (err.name === "PrismaClientInitializationError" || err.message?.includes("Can't reach database server")) {
+    logger.error({ requestId, error: err.message }, "Database connection error");
+    res.status(503).json({
+      error: {
+        code: "SERVICE_UNAVAILABLE",
+        message: "Database temporarily unavailable. Please retry in a moment.",
+      },
+    });
+    return;
+  }
+
   // Handle unexpected errors
   logger.error({ requestId, error: err.message, stack: err.stack }, "Unhandled error");
   res.status(500).json({

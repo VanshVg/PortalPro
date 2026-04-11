@@ -184,3 +184,32 @@ export interface ClientPortalAccessResponse {
   invitedAt: string;
   acceptedAt: string | null;
 }
+
+/** Comment on a task. */
+export interface CommentResponse {
+  id: string;
+  content: string;
+  author: UserResponse;
+  createdAt: string;
+}
+
+/** Time entry response. */
+export interface TimeEntryResponse {
+  id: string;
+  projectId: string;
+  taskId: string | null;
+  user: UserResponse;
+  description: string | null;
+  minutes: number;
+  date: string;
+  billable: boolean;
+  createdAt: string;
+}
+
+/** Folder response. */
+export interface FolderResponse {
+  id: string;
+  name: string;
+  parentId: string | null;
+  projectId: string;
+}

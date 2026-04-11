@@ -1,13 +1,14 @@
 import pino from "pino";
+import { LOG_LEVEL, IS_DEVELOPMENT } from "./env";
 
 /**
  * Structured JSON logger using pino.
  * Every log entry should include contextual fields (tenantId, userId, requestId).
  */
 export const logger = pino({
-  level: process.env.LOG_LEVEL ?? "info",
+  level: LOG_LEVEL,
   transport:
-    process.env.NODE_ENV === "development"
+    IS_DEVELOPMENT
       ? { target: "pino-pretty", options: { colorize: true } }
       : undefined,
   formatters: {

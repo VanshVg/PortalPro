@@ -5,7 +5,7 @@
 // Formatting
 export { formatCurrency, parseCurrencyInput } from "./formatting/currency";
 export { formatDate, formatRelativeTime, toISODate } from "./formatting/date";
-export { truncate, slugify, capitalize } from "./formatting/string";
+export { truncate, slugify, capitalize, formatBytes } from "./formatting/string";
 
 // Validation
 export { isValidEmail } from "./validation/email";

@@ -1,8 +1,6 @@
 import nodemailer from "nodemailer";
-import { createElement } from "react";
 import { render } from "@react-email/components";
-import { VerifyEmail } from "./templates/VerifyEmail";
-import { ResetPassword } from "./templates/ResetPassword";
+import { SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, SMTP_FROM, AGENCY_URL } from "./env";
 
 /**
  * Creates a Nodemailer transporter from environment variables.
@@ -10,29 +8,35 @@ import { ResetPassword } from "./templates/ResetPassword";
  */
 function createTransporter() {
   return nodemailer.createTransport({
-    host: process.env.SMTP_HOST ?? "smtp.gmail.com",
-    port: Number(process.env.SMTP_PORT ?? 587),
+    host: SMTP_HOST,
+    port: SMTP_PORT,
     secure: false, // STARTTLS
     auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS,
+      user: SMTP_USER,
+      pass: SMTP_PASS,
     },
   });
 }
-
-const FROM_ADDRESS = process.env.SMTP_FROM ?? "PortalPro <noreply@portalpro.app>";
 
 /**
  * Returns true when all required SMTP env vars are present.
  */
 function isSmtpConfigured(): boolean {
-  console.log(process.env.SMTP_USER, process.env.SMTP_PASS, ">>>>>>>>>>>>>>>>>>>>")
-  return Boolean(process.env.SMTP_USER && process.env.SMTP_PASS);
+  return Boolean(SMTP_USER && SMTP_PASS);
+}
+
+/** Sends a rendered HTML email or logs in dev mode. */
+async function sendEmail(to: string, subject: string, html: string): Promise<void> {
+  if (!isSmtpConfigured()) {
+    console.log(`\n[DEV] Email — subject: "${subject}" → ${to}`);
+    return;
+  }
+  const transporter = createTransporter();
+  await transporter.sendMail({ from: SMTP_FROM, to, subject, html });
 }
 
 /**
  * Sends the email verification link to a new user.
- * In development (no SMTP credentials), logs the link to the console instead.
  */
 export async function sendVerificationEmail({
   to,
@@ -43,36 +47,19 @@ export async function sendVerificationEmail({
   userName: string;
   verifyUrl: string;
 }): Promise<void> {
-  const agencyUrl = process.env.AUTH_URL ?? "http://localhost:3000";
-
-  // Dev mode: log instead of sending
   if (!isSmtpConfigured()) {
     console.log("\n[DEV] Verification email — would send to:", to);
     console.log("   Link:", verifyUrl, "\n");
     return;
   }
-
-  const html = await render(createElement(VerifyEmail, { userName, verifyUrl, agencyUrl }));
-  const transporter = createTransporter();
-
-  console.log("Sending email to:", {
-    from: FROM_ADDRESS,
-    to,
-    subject: "Verify your PortalPro email address",
-    html,
-  });
-
-  await transporter.sendMail({
-    from: FROM_ADDRESS,
-    to,
-    subject: "Verify your PortalPro email address",
-    html,
-  });
+  const { createElement } = await import("react");
+  const { VerifyEmail } = await import("./templates/VerifyEmail");
+  const html = await render(createElement(VerifyEmail, { userName, verifyUrl, agencyUrl: AGENCY_URL }));
+  await sendEmail(to, "Verify your PortalPro email address", html);
 }
 
 /**
  * Sends a password reset link to an existing user.
- * In development (no SMTP credentials), logs the link to the console instead.
  */
 export async function sendPasswordResetEmail({
   to,
@@ -83,21 +70,63 @@ export async function sendPasswordResetEmail({
   userName: string;
   resetUrl: string;
 }): Promise<void> {
-  const agencyUrl = process.env.AUTH_URL ?? "http://localhost:3000";
-
   if (!isSmtpConfigured()) {
     console.log("\n[DEV] Password reset email — would send to:", to);
     console.log("   Link:", resetUrl, "\n");
     return;
   }
+  const { createElement } = await import("react");
+  const { ResetPassword } = await import("./templates/ResetPassword");
+  const html = await render(createElement(ResetPassword, { userName, resetUrl, agencyUrl: AGENCY_URL }));
+  await sendEmail(to, "Reset your PortalPro password", html);
+}
 
-  const html = await render(createElement(ResetPassword, { userName, resetUrl, agencyUrl }));
-  const transporter = createTransporter();
+/**
+ * Sends a team workspace invitation to a new member.
+ */
+export async function sendTeamInviteEmail({
+  to,
+  inviteeName,
+  workspaceName,
+  inviteUrl,
+}: {
+  to: string;
+  inviteeName: string;
+  workspaceName: string;
+  inviteUrl: string;
+}): Promise<void> {
+  if (!isSmtpConfigured()) {
+    console.log(`\n[DEV] Team invite — workspace: "${workspaceName}" → ${to}`);
+    console.log("   Link:", inviteUrl, "\n");
+    return;
+  }
+  const { createElement } = await import("react");
+  const { TeamInvite } = await import("./templates/TeamInvite");
+  const html = await render(createElement(TeamInvite, { inviteeName, workspaceName, inviteUrl }));
+  await sendEmail(to, `You've been invited to join ${workspaceName} on PortalPro`, html);
+}
 
-  await transporter.sendMail({
-    from: FROM_ADDRESS,
-    to,
-    subject: "Reset your PortalPro password",
-    html,
-  });
+/**
+ * Sends a client portal invitation.
+ */
+export async function sendClientInviteEmail({
+  to,
+  clientName,
+  portalName,
+  inviteUrl,
+}: {
+  to: string;
+  clientName: string;
+  portalName: string;
+  inviteUrl: string;
+}): Promise<void> {
+  if (!isSmtpConfigured()) {
+    console.log(`\n[DEV] Client invite — portal: "${portalName}" → ${to}`);
+    console.log("   Link:", inviteUrl, "\n");
+    return;
+  }
+  const { createElement } = await import("react");
+  const { ClientInvite } = await import("./templates/ClientInvite");
+  const html = await render(createElement(ClientInvite, { clientName, portalName, inviteUrl }));
+  await sendEmail(to, `Your ${portalName} client portal is ready`, html);
 }

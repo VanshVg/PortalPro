@@ -1,0 +1,44 @@
+/**
+ * Central environment configuration for the API server.
+ * All process.env access must go through this file.
+ * Import named constants from here — never use process.env inline elsewhere.
+ *
+ * dotenv is loaded here so it runs before any other module reads process.env.
+ * In production, env vars are injected by the platform (Vercel/Docker) — dotenv is a no-op.
+ */
+import { config } from "dotenv";
+import { resolve, dirname } from "path";
+import { fileURLToPath } from "url";
+
+// Load the root .env file (portalpro/.env) — walks up four levels from apps/api/src/lib/
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+config({ path: resolve(__dirname, "../../../../.env") });
+
+export const NODE_ENV = process.env.NODE_ENV ?? "development";
+export const IS_PRODUCTION = NODE_ENV === "production";
+export const IS_DEVELOPMENT = NODE_ENV === "development";
+// ── Server ──────────────────────────────────────────────────────────────────
+export const PORT = Number(process.env.PORT ?? 4000);
+
+// ── Auth ─────────────────────────────────────────────────────────────────────
+export const AUTH_SECRET = process.env.AUTH_SECRET;
+/** Cookie name used by NextAuth v5. Different in production (Secure prefix). */
+export const AUTH_COOKIE_NAME = IS_PRODUCTION
+  ? "__Secure-authjs.session-token"
+  : "authjs.session-token";
+
+// ── CORS / App URLs ──────────────────────────────────────────────────────────
+// NEXT_PUBLIC_AGENCY_URL is the var name in .env (shared with Next.js apps)
+export const AGENCY_URL = process.env.AGENCY_URL ?? process.env.NEXT_PUBLIC_AGENCY_URL ?? "http://localhost:3000";
+export const PORTAL_URL = process.env.PORTAL_URL ?? process.env.NEXT_PUBLIC_PORTAL_URL ?? "http://localhost:3001";
+
+// ── Cloudflare R2 ────────────────────────────────────────────────────────────
+export const R2_BUCKET = process.env.R2_BUCKET ?? "portalpro";
+export const R2_PUBLIC_URL = process.env.R2_PUBLIC_URL ?? "";
+export const R2_ACCOUNT_ID = process.env.R2_ACCOUNT_ID;
+export const R2_ACCESS_KEY_ID = process.env.R2_ACCESS_KEY_ID ?? "";
+export const R2_SECRET_ACCESS_KEY = process.env.R2_SECRET_ACCESS_KEY ?? "";
+
+// ── Logging ──────────────────────────────────────────────────────────────────
+export const LOG_LEVEL = process.env.LOG_LEVEL ?? "info";

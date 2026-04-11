@@ -11,10 +11,11 @@
     "clean": "rm -rf .next .turbo node_modules"
   },
   "dependencies": {
+    "@hookform/resolvers": "^3.10.0",
     "@portalpro/auth": "workspace:*",
     "@portalpro/config": "workspace:*",
-    "@portalpro/email": "workspace:*",
     "@portalpro/database": "workspace:*",
+    "@portalpro/email": "workspace:*",
     "@portalpro/types": "workspace:*",
     "@portalpro/ui": "workspace:*",
     "@portalpro/utils": "workspace:*",
@@ -24,7 +25,9 @@
     "next-auth": "5.0.0-beta.25",
     "next-themes": "0.4.4",
     "react": "18.3.1",
-    "react-dom": "18.3.1"
+    "react-dom": "18.3.1",
+    "react-hook-form": "^7.72.1",
+    "zod": "3.24.1"
   },
   "devDependencies": {
     "@portalpro/eslint-config": "workspace:*",

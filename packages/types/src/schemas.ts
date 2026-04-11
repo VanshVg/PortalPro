@@ -66,6 +66,54 @@ export const createMilestoneSchema = z.object({
 });
 export type CreateMilestoneInput = z.infer<typeof createMilestoneSchema>;
 
+/** Update an existing milestone. */
+export const updateMilestoneSchema = z.object({
+  title: z.string().min(1).max(200).optional(),
+  description: z.string().max(2000).nullable().optional(),
+  dueDate: z.coerce.date().nullable().optional(),
+  sortOrder: z.number().int().optional(),
+  isCompleted: z.boolean().optional(),
+});
+export type UpdateMilestoneInput = z.infer<typeof updateMilestoneSchema>;
+
+/** Reorder milestones. */
+export const reorderMilestonesSchema = z.object({
+  orderedIds: z.array(z.string().cuid()),
+});
+export type ReorderMilestonesInput = z.infer<typeof reorderMilestonesSchema>;
+
+/** Reorder tasks within a column/project. */
+export const reorderTasksSchema = z.object({
+  orderedIds: z.array(z.string().cuid()),
+});
+export type ReorderTasksInput = z.infer<typeof reorderTasksSchema>;
+
+/** Create a comment on a task. */
+export const createCommentSchema = z.object({
+  content: z.string().min(1, "Comment cannot be empty").max(5000),
+});
+export type CreateCommentInput = z.infer<typeof createCommentSchema>;
+
+/** Create a time entry. */
+export const createTimeEntrySchema = z.object({
+  projectId: z.string().cuid(),
+  taskId: z.string().cuid().nullable().optional(),
+  description: z.string().max(500).optional(),
+  minutes: z.number().int().positive("Must be at least 1 minute").max(1440, "Cannot exceed 24 hours"),
+  date: z.coerce.date(),
+  billable: z.boolean(),
+});
+export type CreateTimeEntryInput = z.infer<typeof createTimeEntrySchema>;
+
+/** Update a time entry. */
+export const updateTimeEntrySchema = z.object({
+  description: z.string().max(500).optional(),
+  minutes: z.number().int().positive().max(1440).optional(),
+  date: z.coerce.date().optional(),
+  billable: z.boolean().optional(),
+});
+export type UpdateTimeEntryInput = z.infer<typeof updateTimeEntrySchema>;
+
 /** Create an invoice. */
 export const createInvoiceSchema = z.object({
   number: z.string().min(1, "Invoice number is required").max(50),
@@ -90,3 +138,90 @@ export const createDeliverableSchema = z.object({
   fileIds: z.array(z.string().cuid()).default([]),
 });
 export type CreateDeliverableInput = z.infer<typeof createDeliverableSchema>;
+
+// ============================================
+// Phase 2: Tenant, Team, Portal, File Schemas
+// ============================================
+
+/** Update workspace (tenant) general settings. */
+export const updateTenantSchema = z.object({
+  name: z.string().min(1, "Workspace name is required").max(200).optional(),
+  primaryColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/, "Must be a valid hex color").optional(),
+  secondaryColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/, "Must be a valid hex color").optional(),
+  customDomain: z.string().max(200).nullable().optional(),
+});
+export type UpdateTenantInput = z.infer<typeof updateTenantSchema>;
+
+/** Invite a team member to the workspace. */
+export const inviteMemberSchema = z.object({
+  email: z.string().email("Valid email is required"),
+  name: z.string().min(1, "Name is required").max(200),
+  role: z.enum(["OWNER", "ADMIN", "EDITOR", "VIEWER"]).default("EDITOR"),
+});
+export type InviteMemberInput = z.infer<typeof inviteMemberSchema>;
+
+/** Update a team member's role. */
+export const updateMemberRoleSchema = z.object({
+  role: z.enum(["OWNER", "ADMIN", "EDITOR", "VIEWER"]),
+});
+export type UpdateMemberRoleInput = z.infer<typeof updateMemberRoleSchema>;
+
+/** Create a client portal. */
+export const createPortalSchema = z.object({
+  name: z.string().min(1, "Portal name is required").max(200),
+  slug: z
+    .string()
+    .min(2)
+    .max(60)
+    .regex(/^[a-z0-9-]+$/, "Slug can only contain lowercase letters, numbers, and hyphens")
+    .optional(),
+  primaryColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
+  customDomain: z.string().max(200).nullable().optional(),
+});
+export type CreatePortalInput = z.infer<typeof createPortalSchema>;
+
+/** Update a client portal's settings. */
+export const updatePortalSchema = z.object({
+  name: z.string().min(1).max(200).optional(),
+  primaryColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
+  customDomain: z.string().max(200).nullable().optional(),
+  isActive: z.boolean().optional(),
+});
+export type UpdatePortalInput = z.infer<typeof updatePortalSchema>;
+
+/** Invite a client user to a portal. */
+export const inviteClientSchema = z.object({
+  email: z.string().email("Valid email is required"),
+  name: z.string().min(1, "Name is required").max(200),
+  role: z.enum(["ADMIN", "VIEWER"]).default("VIEWER"),
+});
+export type InviteClientInput = z.infer<typeof inviteClientSchema>;
+
+/** Request a presigned upload URL for a file. */
+export const requestPresignedUrlSchema = z.object({
+  fileName: z.string().min(1).max(500),
+  mimeType: z.string().min(1).max(200),
+  fileSize: z.number().int().positive().max(100 * 1024 * 1024, "File must be under 100 MB"),
+  projectId: z.string().cuid(),
+  folderId: z.string().cuid().nullable().optional(),
+});
+export type RequestPresignedUrlInput = z.infer<typeof requestPresignedUrlSchema>;
+
+/** Confirm a completed file upload. */
+export const confirmUploadSchema = z.object({
+  name: z.string().min(1).max(500),
+  key: z.string().min(1),
+  size: z.number().int().positive(),
+  mimeType: z.string().min(1).max(200),
+  projectId: z.string().cuid(),
+  folderId: z.string().cuid().nullable().optional(),
+});
+export type ConfirmUploadInput = z.infer<typeof confirmUploadSchema>;
+
+/** Create a folder within a project. */
+export const createFolderSchema = z.object({
+  name: z.string().min(1, "Folder name is required").max(200),
+  projectId: z.string().cuid(),
+  parentId: z.string().cuid().nullable().optional(),
+});
+export type CreateFolderInput = z.infer<typeof createFolderSchema>;

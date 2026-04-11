@@ -23,6 +23,35 @@ declare module "next-auth" {
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
+  callbacks: {
+    ...authConfig.callbacks,
+    /**
+     * Override jwt callback to always re-fetch the user's live tenant membership.
+     *
+     * The base config only sets tenantId/role when `user` is present (sign-in only).
+     * This means a JWT created before onboarding completes has role: null and never
+     * gets refreshed. Re-fetching on every token read ensures the role is always current.
+     */
+    async jwt({ token, user, account, profile, trigger, session, isNewUser }) {
+      // Run base config first — handles sign-in case (writes id, tenantId, role from user)
+      const base = authConfig.callbacks!.jwt!;
+      const updatedToken = (await base({ token, user, account, profile, trigger, session, isNewUser })) ?? token;
+
+      // Always re-fetch live membership so stale JWTs pick up role changes
+      const userId = updatedToken["id"] as string | undefined;
+      if (userId) {
+        const membership = await prisma.tenantMember.findFirst({
+          where: { userId },
+          select: { tenantId: true, role: true },
+          orderBy: { tenant: { createdAt: "asc" } },
+        });
+        updatedToken["tenantId"] = membership?.tenantId ?? (updatedToken["tenantId"] as string | null | undefined) ?? null;
+        updatedToken["role"] = membership?.role ?? null;
+      }
+
+      return updatedToken;
+    },
+  },
   providers: [
     Credentials({
       credentials: {
@@ -36,30 +65,30 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         const user = await prisma.user.findUnique({
           where: { email: credentials.email },
-          include: {
-            tenantMembers: {
-              select: { tenantId: true, role: true },
-              orderBy: { tenant: { createdAt: "asc" } },
-              take: 1,
-            },
+          select: {
+            id: true,
+            email: true,
+            name: true,
+            avatarUrl: true,
+            passwordHash: true,
+            emailVerified: true,
           },
         });
 
         if (!user?.passwordHash) return null;
-        if (!user.emailVerified) return null; // block unverified accounts at NextAuth level
+        if (!user.emailVerified) return null;
 
         const isValid = await compare(credentials.password, user.passwordHash);
         if (!isValid) return null;
 
-        const membership = user.tenantMembers[0] ?? null;
-
+        // Return without tenantId/role — the jwt() callback above fetches them live
         return {
           id: user.id,
           email: user.email,
           name: user.name,
           image: user.avatarUrl,
-          tenantId: membership?.tenantId ?? null,
-          role: membership?.role ?? null,
+          tenantId: null,
+          role: null,
         };
       },
     }),

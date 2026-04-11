@@ -7,16 +7,17 @@ import { requestIdMiddleware } from "./middleware/request-id.middleware";
 import { authMiddleware } from "./middleware/auth.middleware";
 import { tenantMiddleware } from "./middleware/tenant.middleware";
 import { logger } from "./lib/logger";
+import { PORT, AGENCY_URL, PORTAL_URL } from "./lib/env";
+import { tenantRoutes } from "./routes/tenants/tenants.routes";
+import { portalRoutes } from "./routes/portals/portals.routes";
+import { projectRoutes } from "./routes/projects/projects.routes";
+import { fileRoutes } from "./routes/files/files.routes";
 
 const app = express();
-const PORT = process.env.PORT ?? 4000;
 
 // ===== Global Middleware (order matters) =====
 app.use(cors({
-  origin: [
-    process.env.AGENCY_URL ?? "http://localhost:3000",
-    process.env.PORTAL_URL ?? "http://localhost:3001",
-  ],
+  origin: [AGENCY_URL, PORTAL_URL],
   credentials: true,
 }));
 app.use(helmet());
@@ -37,18 +38,19 @@ apiRouter.use(tenantMiddleware);
 apiRouter.get("/", (_req, res) => {
   res.json({
     name: "PortalPro API",
-    version: "0.1.0",
+    version: "1.0.0",
     docs: "/api/docs",
   });
 });
 
-// Route registration (added as modules are implemented):
-// apiRouter.use("/auth", authRoutes);
-// apiRouter.use("/tenants", tenantRoutes);
-// apiRouter.use("/portals", portalRoutes);
-// apiRouter.use("/projects", projectRoutes);
+// Phase 2: Core routes
+apiRouter.use("/tenants", tenantRoutes);
+apiRouter.use("/portals", portalRoutes);
+apiRouter.use("/projects", projectRoutes);
+apiRouter.use("/files", fileRoutes);
+
+// Phase 3+ (stubs — implemented in later phases):
 // apiRouter.use("/tasks", taskRoutes);
-// apiRouter.use("/files", fileRoutes);
 // apiRouter.use("/messages", messageRoutes);
 // apiRouter.use("/invoices", invoiceRoutes);
 

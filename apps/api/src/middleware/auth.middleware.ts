@@ -1,8 +1,9 @@
 import type { Request, Response, NextFunction } from "express";
 import { hkdf } from "@panva/hkdf";
-import { jwtDecrypt } from "jose";
+import { jwtDecrypt, base64url, calculateJwkThumbprint } from "jose";
 import { parse as parseCookies } from "cookie";
 import { UnauthorizedError } from "@portalpro/types";
+import { AUTH_SECRET, AUTH_COOKIE_NAME } from "../lib/env";
 
 // Extend Express Request to carry session user
 declare global {
@@ -20,33 +21,71 @@ declare global {
   }
 }
 
-const COOKIE_NAME =
-  process.env.NODE_ENV === "production"
-    ? "__Secure-authjs.session-token"
-    : "authjs.session-token";
-
 /**
- * Derives the encryption key from AUTH_SECRET using HKDF,
- * matching NextAuth v5's key derivation strategy.
+ * Pre-computed encryption keys cached at module load time.
+ * HKDF + JWK thumbprint are expensive; doing them once avoids per-request crypto overhead.
+ * Keys are keyed by enc algorithm so we handle both A256CBC-HS512 and A256GCM.
  */
-async function deriveEncryptionKey(secret: string): Promise<Uint8Array> {
-  return hkdf(
-    "sha256",
-    secret,
-    "",
-    "Auth.js Generated Encryption Key",
-    64,
-  );
+interface CachedKey {
+  key: Uint8Array;
+  thumbprint: string;
+}
+const keyCache = new Map<string, Promise<CachedKey>>();
+
+function getCachedKey(enc: string, secret: string, salt: string): Promise<CachedKey> {
+  const cacheKey = `${enc}:${salt}`;
+  let cached = keyCache.get(cacheKey);
+  if (!cached) {
+    cached = (async () => {
+      const length = enc === "A256GCM" ? 32 : 64; // A256CBC-HS512 is the NextAuth v5 default
+      const key = await hkdf(
+        "sha256",
+        secret,
+        salt,
+        `Auth.js Generated Encryption Key (${salt})`,
+        length,
+      );
+      const thumbprint = await calculateJwkThumbprint(
+        { kty: "oct", k: base64url.encode(key) },
+        `sha${key.byteLength << 3}` as "sha256" | "sha384" | "sha512",
+      );
+      return { key, thumbprint };
+    })();
+    keyCache.set(cacheKey, cached);
+  }
+  return cached;
+}
+
+// Warm up the cache at module load if AUTH_SECRET is already available
+if (AUTH_SECRET) {
+  void getCachedKey("A256CBC-HS512", AUTH_SECRET, AUTH_COOKIE_NAME);
 }
 
 /**
  * Decodes a NextAuth v5 JWE session token.
+ * Uses a key-selector function so the correct key is chosen even if the
+ * enc algorithm changes, matching @auth/core's decode() implementation.
+ * Encryption keys are cached after first derivation to avoid per-request HKDF overhead.
  */
-async function decodeNextAuthToken(token: string, secret: string) {
-  const encryptionKey = await deriveEncryptionKey(secret);
-  const { payload } = await jwtDecrypt(token, encryptionKey, {
-    clockTolerance: 15,
-  });
+async function decodeNextAuthToken(
+  token: string,
+  secret: string,
+  salt: string,
+) {
+  const { payload } = await jwtDecrypt(
+    token,
+    async ({ kid, enc }) => {
+      const { key, thumbprint } = await getCachedKey(enc ?? "A256CBC-HS512", secret, salt);
+      if (kid === undefined) return key;
+      if (kid === thumbprint) return key;
+      throw new Error("No matching decryption secret");
+    },
+    {
+      clockTolerance: 15,
+      keyManagementAlgorithms: ["dir"],
+      contentEncryptionAlgorithms: ["A256CBC-HS512", "A256GCM"],
+    },
+  );
   return payload;
 }
 
@@ -62,7 +101,7 @@ export async function authMiddleware(
   _res: Response,
   next: NextFunction,
 ): Promise<void> {
-  const secret = process.env.AUTH_SECRET;
+  const secret = AUTH_SECRET;
   if (!secret) {
     next(new Error("AUTH_SECRET is not configured"));
     return;
@@ -80,7 +119,7 @@ export async function authMiddleware(
   if (!rawToken) {
     const cookieHeader = req.headers.cookie ?? "";
     const cookies = parseCookies(cookieHeader);
-    rawToken = cookies[COOKIE_NAME];
+    rawToken = cookies[AUTH_COOKIE_NAME];
   }
 
   if (!rawToken) {
@@ -89,7 +128,7 @@ export async function authMiddleware(
   }
 
   try {
-    const payload = await decodeNextAuthToken(rawToken, secret);
+    const payload = await decodeNextAuthToken(rawToken, secret, AUTH_COOKIE_NAME);
 
     req.user = {
       id: (payload["id"] as string) ?? (payload["sub"] as string),

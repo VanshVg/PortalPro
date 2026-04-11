@@ -10,6 +10,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 export default function PortalLoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const successMessage = searchParams.get("message");
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -79,6 +80,10 @@ export default function PortalLoginPage() {
               className="border-neutral-600 bg-neutral-700 text-white placeholder:text-neutral-500 focus:ring-primary"
             />
           </div>
+
+          {successMessage && (
+            <p className="rounded-lg bg-green-50 px-3 py-2 text-sm text-green-700">{successMessage}</p>
+          )}
 
           {error && (
             <p className="rounded-lg bg-error/10 px-3 py-2 text-sm text-error">{error}</p>

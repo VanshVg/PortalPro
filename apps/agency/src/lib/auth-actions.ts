@@ -8,7 +8,7 @@ import { AuthError } from "next-auth";
 import { randomBytes } from "crypto";
 import { redirect } from "next/navigation";
 
-const AGENCY_URL = process.env.AUTH_URL ?? "http://localhost:3000";
+import { AGENCY_URL } from "./env";
 const TOKEN_EXPIRY_HOURS = 24;
 
 /**
