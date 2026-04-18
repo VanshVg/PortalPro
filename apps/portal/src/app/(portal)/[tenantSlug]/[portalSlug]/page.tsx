@@ -1,6 +1,7 @@
 import { prisma } from "@portalpro/database";
 import { auth } from "@/auth";
 import { notFound } from "next/navigation";
+import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle, Badge } from "@portalpro/ui";
 import { FolderOpen, CheckSquare, MessageSquare, Clock } from "lucide-react";
 
@@ -122,7 +123,11 @@ export default async function PortalDashboardPage({ params }: PortalDashboardPro
               const progress = total > 0 ? Math.round((done / total) * 100) : 0;
 
               return (
-                <Card key={project.id} className="hover:border-neutral-300 transition-colors cursor-pointer">
+                <Link
+                  key={project.id}
+                  href={`/${params.tenantSlug}/${params.portalSlug}/projects/${project.id}`}
+                >
+                <Card className="hover:border-neutral-300 hover:shadow-sm transition-all cursor-pointer">
                   <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-3">
                     <CardTitle className="text-base font-semibold text-neutral-800 leading-snug">
                       {project.name}
@@ -162,6 +167,7 @@ export default async function PortalDashboardPage({ params }: PortalDashboardPro
                     )}
                   </CardContent>
                 </Card>
+                </Link>
               );
             })}
           </div>

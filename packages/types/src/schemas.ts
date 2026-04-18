@@ -34,12 +34,12 @@ export type UpdateProjectInput = z.infer<typeof updateProjectSchema>;
 /** Create a new task. */
 export const createTaskSchema = z.object({
   title: z.string().min(1, "Task title is required").max(200),
-  description: z.string().max(2000).optional(),
-  milestoneId: z.string().cuid().optional(),
+  description: z.string().max(2000).nullish(),
+  milestoneId: z.string().cuid().nullish(),
   priority: z.enum(["LOW", "MEDIUM", "HIGH", "URGENT"]).default("MEDIUM"),
-  assigneeId: z.string().cuid().optional(),
-  dueDate: z.coerce.date().optional(),
-  blockedById: z.string().cuid().optional(),
+  assigneeId: z.string().cuid().nullish(),
+  dueDate: z.coerce.date().nullish(),
+  blockedById: z.string().cuid().nullish(),
 });
 export type CreateTaskInput = z.infer<typeof createTaskSchema>;
 

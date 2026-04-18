@@ -25,6 +25,17 @@ declare module "next-auth" {
 // The authConfig pages redirect to /login (portal login page).
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
+  cookies: {
+    sessionToken: {
+      name: "portalpro.portal.session-token",
+      options: {
+        httpOnly: true,
+        sameSite: "lax",
+        path: "/",
+        secure: process.env.NODE_ENV === "production",
+      },
+    },
+  },
   pages: {
     signIn: "/login",
     error: "/login",

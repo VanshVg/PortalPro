@@ -3,7 +3,7 @@ import { hkdf } from "@panva/hkdf";
 import { jwtDecrypt, base64url, calculateJwkThumbprint } from "jose";
 import { parse as parseCookies } from "cookie";
 import { UnauthorizedError } from "@portalpro/types";
-import { AUTH_SECRET, AUTH_COOKIE_NAME } from "../lib/env";
+import { AUTH_SECRET, AUTH_COOKIE_NAME, PORTAL_COOKIE_NAME } from "../lib/env";
 
 // Extend Express Request to carry session user
 declare global {
@@ -56,9 +56,10 @@ function getCachedKey(enc: string, secret: string, salt: string): Promise<Cached
   return cached;
 }
 
-// Warm up the cache at module load if AUTH_SECRET is already available
+// Warm up the cache at module load for both cookie salts
 if (AUTH_SECRET) {
   void getCachedKey("A256CBC-HS512", AUTH_SECRET, AUTH_COOKIE_NAME);
+  void getCachedKey("A256CBC-HS512", AUTH_SECRET, PORTAL_COOKIE_NAME);
 }
 
 /**
@@ -108,18 +109,43 @@ export async function authMiddleware(
   }
 
   let rawToken: string | undefined;
+  let cookieSalt = AUTH_COOKIE_NAME; // which salt to use for JWE decryption
 
-  // 1. Try Authorization: Bearer <token>
+  // 1. Try Authorization: Bearer <token> (agency API clients only)
   const authHeader = req.headers.authorization;
   if (authHeader?.startsWith("Bearer ")) {
     rawToken = authHeader.slice(7);
   }
 
-  // 2. Fall back to session cookie
+  // 2. Parse cookies once.
+  // The `X-Portalpro-App: portal` header tells us the request came from the portal
+  // client app.  Both apps run on localhost in dev so they share the cookie jar —
+  // without this signal we would always pick the agency cookie first, which would
+  // authenticate the portal client as the currently-logged-in agency user instead.
   if (!rawToken) {
     const cookieHeader = req.headers.cookie ?? "";
     const cookies = parseCookies(cookieHeader);
-    rawToken = cookies[AUTH_COOKIE_NAME];
+    const isPortalRequest = req.headers["x-portalpro-app"] === "portal";
+
+    if (isPortalRequest) {
+      // Portal request: prefer portal cookie, fall back to agency cookie
+      if (cookies[PORTAL_COOKIE_NAME]) {
+        rawToken = cookies[PORTAL_COOKIE_NAME];
+        cookieSalt = PORTAL_COOKIE_NAME;
+      } else if (cookies[AUTH_COOKIE_NAME]) {
+        rawToken = cookies[AUTH_COOKIE_NAME];
+        cookieSalt = AUTH_COOKIE_NAME;
+      }
+    } else {
+      // Agency request: prefer agency cookie, fall back to portal cookie
+      if (cookies[AUTH_COOKIE_NAME]) {
+        rawToken = cookies[AUTH_COOKIE_NAME];
+        cookieSalt = AUTH_COOKIE_NAME;
+      } else if (cookies[PORTAL_COOKIE_NAME]) {
+        rawToken = cookies[PORTAL_COOKIE_NAME];
+        cookieSalt = PORTAL_COOKIE_NAME;
+      }
+    }
   }
 
   if (!rawToken) {
@@ -128,7 +154,7 @@ export async function authMiddleware(
   }
 
   try {
-    const payload = await decodeNextAuthToken(rawToken, secret, AUTH_COOKIE_NAME);
+    const payload = await decodeNextAuthToken(rawToken, secret, cookieSalt);
 
     req.user = {
       id: (payload["id"] as string) ?? (payload["sub"] as string),

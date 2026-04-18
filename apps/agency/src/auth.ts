@@ -23,6 +23,17 @@ declare module "next-auth" {
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
+  cookies: {
+    sessionToken: {
+      name: "portalpro.agency.session-token",
+      options: {
+        httpOnly: true,
+        sameSite: "lax",
+        path: "/",
+        secure: process.env.NODE_ENV === "production",
+      },
+    },
+  },
   callbacks: {
     ...authConfig.callbacks,
     /**

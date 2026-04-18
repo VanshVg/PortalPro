@@ -10,6 +10,7 @@ import {
   DialogFooter,
   Button,
 } from "@portalpro/ui";
+import { UnreadMessagesBadge } from "./UnreadMessagesBadge";
 import {
   LayoutDashboard,
   Users,
@@ -29,13 +30,13 @@ import { usePathname, useSearchParams } from "next/navigation";
 import { useState, useTransition } from "react";
 import { logoutAction } from "@/lib/auth-actions";
 
-const mainNavItems = [
+const baseNavItems = [
   { label: "Dashboard", href: "/", icon: LayoutDashboard },
   { label: "Clients", href: "/clients", icon: Users },
   { label: "Projects", href: "/projects", icon: FolderOpen },
-  { label: "Messages", href: "/messages", icon: MessageSquare, badge: 3 },
+  { label: "Messages", href: "/messages", icon: MessageSquare },
   { label: "Invoices", href: "/invoices", icon: Receipt },
-];
+] as const;
 
 const settingsNavItems = [
   { label: "Workspace", href: "/settings?tab=general", icon: Settings },
@@ -50,12 +51,15 @@ interface SidebarProps {
     role: string | null;
     image?: string | null;
   };
+  unreadMessages?: number;
 }
 
-export function Sidebar({ user }: SidebarProps) {
+export function Sidebar({ user, unreadMessages = 0 }: SidebarProps) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [collapsed, setCollapsed] = useState(false);
+
+  const mainNavItems = baseNavItems;
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
   const [, startTransition] = useTransition();
 
@@ -128,10 +132,8 @@ export function Sidebar({ user }: SidebarProps) {
               {!collapsed && (
                 <>
                   <span className="flex-1">{item.label}</span>
-                  {item.badge && (
-                    <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-accent text-[10px] font-bold text-neutral-900">
-                      {item.badge}
-                    </span>
+                  {item.label === "Messages" && (
+                    <UnreadMessagesBadge initialCount={unreadMessages} />
                   )}
                 </>
               )}

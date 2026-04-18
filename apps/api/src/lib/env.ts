@@ -23,10 +23,23 @@ export const PORT = Number(process.env.PORT ?? 4000);
 
 // ── Auth ─────────────────────────────────────────────────────────────────────
 export const AUTH_SECRET = process.env.AUTH_SECRET;
-/** Cookie name used by NextAuth v5. Different in production (Secure prefix). */
+/**
+ * Cookie name for the agency NextAuth v5 session.
+ * Must match `cookies.sessionToken.name` in apps/agency/src/auth.ts.
+ * In production, the __Secure- prefix is added automatically by browsers for HTTPS cookies,
+ * but NextAuth also adds it when `secure: true` — so we mirror that here.
+ */
 export const AUTH_COOKIE_NAME = IS_PRODUCTION
-  ? "__Secure-authjs.session-token"
-  : "authjs.session-token";
+  ? "__Secure-portalpro.agency.session-token"
+  : "portalpro.agency.session-token";
+
+/**
+ * Cookie name for the portal NextAuth v5 session.
+ * Must match `cookies.sessionToken.name` in apps/portal/src/auth.ts.
+ */
+export const PORTAL_COOKIE_NAME = IS_PRODUCTION
+  ? "__Secure-portalpro.portal.session-token"
+  : "portalpro.portal.session-token";
 
 // ── CORS / App URLs ──────────────────────────────────────────────────────────
 // NEXT_PUBLIC_AGENCY_URL is the var name in .env (shared with Next.js apps)
