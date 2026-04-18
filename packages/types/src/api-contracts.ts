@@ -99,6 +99,7 @@ export interface TaskResponse {
   assigneeId: string | null;
   assignee?: UserResponse;
   milestoneId: string | null;
+  number: number;
   dueDate: string | null;
   sortOrder: number;
   blockedById: string | null;

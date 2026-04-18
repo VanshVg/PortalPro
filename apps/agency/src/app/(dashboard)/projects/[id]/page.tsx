@@ -54,6 +54,7 @@ export default async function ProjectDetailPage({ params }: Props) {
       tasks: {
         select: {
           id: true,
+          number: true,
           title: true,
           description: true,
           status: true,
@@ -108,6 +109,7 @@ export default async function ProjectDetailPage({ params }: Props) {
     const assignee = t.assigneeId ? assigneeMap.get(t.assigneeId) : undefined;
     return {
       id: t.id,
+      number: t.number,
       title: t.title,
       description: t.description,
       status: t.status as "TODO" | "IN_PROGRESS" | "IN_REVIEW" | "DONE",

@@ -253,7 +253,16 @@ export function TaskDetailModal({
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-neutral-100">
           <h2 className="text-base font-semibold text-neutral-800">
-            {isNew ? "New Task" : "Task Details"}
+            {isNew ? (
+              "New Task"
+            ) : (
+              <span>
+                {task?.number && task.number > 0 && (
+                  <span className="text-neutral-400 font-normal mr-1.5">#{task.number}</span>
+                )}
+                Task Details
+              </span>
+            )}
           </h2>
           <div className="flex items-center gap-2">
             {!isNew && canEdit && (

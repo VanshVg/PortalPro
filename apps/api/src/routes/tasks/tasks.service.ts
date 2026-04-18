@@ -32,6 +32,7 @@ function toUserResponse(u: {
 
 type RawTask = {
   id: string;
+  number: number;
   title: string;
   description: string | null;
   status: string;
@@ -49,6 +50,7 @@ type RawTask = {
 function toTaskResponse(t: RawTask, assigneeMap?: Map<string, UserResponse>): TaskResponse {
   return {
     id: t.id,
+    number: t.number,
     title: t.title,
     description: t.description,
     status: t.status as TaskResponse["status"],
@@ -116,7 +118,7 @@ export async function listTasks(
       }),
     },
     select: {
-      id: true, title: true, description: true, status: true, priority: true,
+      id: true, number: true, title: true, description: true, status: true, priority: true,
       assigneeId: true, milestoneId: true, dueDate: true, sortOrder: true,
       blockedById: true, createdAt: true, updatedAt: true,
       _count: { select: { comments: true } },
@@ -135,7 +137,7 @@ export async function getTask(tenantId: string, taskId: string): Promise<TaskRes
   const task = await prisma.task.findUnique({
     where: { id: taskId },
     select: {
-      id: true, title: true, description: true, status: true, priority: true,
+      id: true, number: true, title: true, description: true, status: true, priority: true,
       assigneeId: true, milestoneId: true, dueDate: true, sortOrder: true,
       blockedById: true, createdAt: true, updatedAt: true,
       projectId: true,
@@ -185,16 +187,24 @@ export async function createTask(
     }
   }
 
-  // Auto-assign sortOrder at end of TODO column
-  const maxOrder = await prisma.task.aggregate({
-    where: { projectId, status: "TODO" },
-    _max: { sortOrder: true },
-  });
+  // Auto-assign sortOrder at end of TODO column and sequential task number per project
+  const [maxOrder, maxNumber] = await Promise.all([
+    prisma.task.aggregate({
+      where: { projectId, status: "TODO" },
+      _max: { sortOrder: true },
+    }),
+    prisma.task.aggregate({
+      where: { projectId },
+      _max: { number: true },
+    }),
+  ]);
   const sortOrder = (maxOrder._max.sortOrder ?? -1) + 1;
+  const number = (maxNumber._max.number ?? 0) + 1;
 
   const task = await prisma.task.create({
     data: {
       projectId,
+      number,
       title: input.title,
       description: input.description ?? null,
       milestoneId: input.milestoneId ?? null,
@@ -205,7 +215,7 @@ export async function createTask(
       sortOrder,
     },
     select: {
-      id: true, title: true, description: true, status: true, priority: true,
+      id: true, number: true, title: true, description: true, status: true, priority: true,
       assigneeId: true, milestoneId: true, dueDate: true, sortOrder: true,
       blockedById: true, createdAt: true, updatedAt: true, projectId: true,
       _count: { select: { comments: true } },
@@ -264,7 +274,7 @@ export async function updateTask(
       ...(input.blockedById !== undefined && { blockedById: input.blockedById }),
     },
     select: {
-      id: true, title: true, description: true, status: true, priority: true,
+      id: true, number: true, title: true, description: true, status: true, priority: true,
       assigneeId: true, milestoneId: true, dueDate: true, sortOrder: true,
       blockedById: true, createdAt: true, updatedAt: true, projectId: true,
       _count: { select: { comments: true } },

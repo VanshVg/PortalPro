@@ -179,6 +179,7 @@ model Task {
   priority    Priority   @default(MEDIUM)
   assigneeId  String?
   dueDate     DateTime?
+  number      Int        @default(0)
   sortOrder   Int        @default(0)
   blockedById String?
   createdAt   DateTime   @default(now())
