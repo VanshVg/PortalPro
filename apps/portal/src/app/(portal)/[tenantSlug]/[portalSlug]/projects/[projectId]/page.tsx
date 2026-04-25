@@ -11,6 +11,7 @@ import {
   ArrowLeft,
 } from "lucide-react";
 import { PortalMessagesLink } from "@/components/PortalMessagesLink";
+import { DeliverableReview } from "@/components/DeliverableReview";
 
 interface Props {
   params: { tenantSlug: string; portalSlug: string; projectId: string };
@@ -101,14 +102,28 @@ export default async function PortalProjectPage({ params }: Props) {
 
   if (!project || project.clientPortalId !== portal.id) notFound();
 
-  const unreadMessageCount = await prisma.message.count({
-    where: {
-      projectId: params.projectId,
-      threadId: null,
-      isRead: false,
-      authorId: { not: session.user.id },
-    },
-  });
+  const [unreadMessageCount, deliverables] = await Promise.all([
+    prisma.message.count({
+      where: {
+        projectId: params.projectId,
+        threadId: null,
+        isRead: false,
+        authorId: { not: session.user.id },
+      },
+    }),
+    prisma.deliverable.findMany({
+      where: { projectId: params.projectId },
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        status: true,
+        feedback: true,
+        submittedAt: true,
+      },
+      orderBy: { sortOrder: "asc" },
+    }),
+  ]);
 
   const allTasks = [
     ...project.milestones.flatMap((m) => m.tasks),
@@ -410,6 +425,20 @@ export default async function PortalProjectPage({ params }: Props) {
             </p>
           </CardContent>
         </Card>
+      )}
+
+      {/* Deliverables for client review */}
+      {deliverables.length > 0 && (
+        <DeliverableReview
+          deliverables={deliverables.map((d) => ({
+            id: d.id,
+            title: d.title,
+            description: d.description,
+            status: d.status,
+            feedback: d.feedback,
+            submittedAt: d.submittedAt?.toISOString() ?? null,
+          }))}
+        />
       )}
 
       {/* Messages link — shows unread dot when new messages arrive */}

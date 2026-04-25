@@ -1,1 +1,1 @@
-{"root":["./src/env.ts","./src/index.ts","./src/mailer.ts","./src/server.ts","./src/templates/clientinvite.tsx","./src/templates/resetpassword.tsx","./src/templates/teaminvite.tsx","./src/templates/verifyemail.tsx"],"version":"5.7.3"}
+{"root":["./src/env.ts","./src/index.ts","./src/mailer.ts","./src/server.ts","./src/templates/clientinvite.tsx","./src/templates/deliverablenotification.tsx","./src/templates/invoiceemail.tsx","./src/templates/resetpassword.tsx","./src/templates/teaminvite.tsx","./src/templates/verifyemail.tsx"],"version":"5.7.3"}

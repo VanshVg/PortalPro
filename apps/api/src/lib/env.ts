@@ -53,5 +53,9 @@ export const R2_ACCOUNT_ID = process.env.R2_ACCOUNT_ID;
 export const R2_ACCESS_KEY_ID = process.env.R2_ACCESS_KEY_ID ?? "";
 export const R2_SECRET_ACCESS_KEY = process.env.R2_SECRET_ACCESS_KEY ?? "";
 
+// ── Stripe ───────────────────────────────────────────────────────────────────
+export const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY ?? "";
+export const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET ?? "";
+
 // ── Logging ──────────────────────────────────────────────────────────────────
 export const LOG_LEVEL = process.env.LOG_LEVEL ?? "info";

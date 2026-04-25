@@ -130,3 +130,140 @@ export async function sendClientInviteEmail({
   const html = await render(createElement(ClientInvite, { clientName, portalName, inviteUrl }));
   await sendEmail(to, `Your ${portalName} client portal is ready`, html);
 }
+
+/**
+ * Notifies the client when an agency submits a deliverable for review.
+ * If `to` is not provided (client emails not available), logs to console only.
+ */
+export async function sendDeliverableSubmittedEmail({
+  to,
+  deliverableTitle,
+  projectName,
+  reviewUrl,
+}: {
+  to?: string;
+  deliverableTitle: string;
+  projectName?: string;
+  reviewUrl?: string;
+}): Promise<void> {
+  if (!to) {
+    console.log(`\n[DEV] Deliverable submitted — "${deliverableTitle}" (no client email on record)\n`);
+    return;
+  }
+  if (!isSmtpConfigured()) {
+    console.log(`\n[DEV] Deliverable submitted — "${deliverableTitle}" → ${to}\n`);
+    return;
+  }
+  const { createElement } = await import("react");
+  const { DeliverableSubmitted } = await import("./templates/DeliverableNotification");
+  const html = await render(
+    createElement(DeliverableSubmitted, {
+      deliverableTitle,
+      projectName: projectName ?? "Your project",
+      reviewUrl: reviewUrl ?? AGENCY_URL,
+    }),
+  );
+  await sendEmail(to, `New deliverable ready for review: ${deliverableTitle}`, html);
+}
+
+/**
+ * Notifies the agency when a client approves or requests a revision.
+ */
+export async function sendDeliverableReviewedEmail({
+  to,
+  deliverableTitle,
+  decision,
+  feedback,
+  projectName,
+  deliverableUrl,
+}: {
+  to?: string;
+  deliverableTitle: string;
+  decision: "approved" | "revision_requested";
+  feedback?: string;
+  projectName?: string;
+  deliverableUrl?: string;
+}): Promise<void> {
+  if (!to) {
+    console.log(
+      `\n[DEV] Deliverable reviewed (${decision}) — "${deliverableTitle}" (no agency email on record)\n`,
+    );
+    return;
+  }
+  if (!isSmtpConfigured()) {
+    console.log(`\n[DEV] Deliverable reviewed (${decision}) — "${deliverableTitle}" → ${to}\n`);
+    return;
+  }
+  const { createElement } = await import("react");
+  const { DeliverableReviewed } = await import("./templates/DeliverableNotification");
+  const subject =
+    decision === "approved"
+      ? `Deliverable approved: ${deliverableTitle}`
+      : `Revision requested on: ${deliverableTitle}`;
+  const html = await render(
+    createElement(DeliverableReviewed, {
+      deliverableTitle,
+      projectName: projectName ?? "Your project",
+      decision,
+      feedback,
+      deliverableUrl: deliverableUrl ?? AGENCY_URL,
+    }),
+  );
+  await sendEmail(to, subject, html);
+}
+
+/**
+ * Sends an invoice to a client.
+ */
+export async function sendInvoiceEmail({
+  to,
+  invoiceNumber,
+  amount,
+  currency,
+  dueDate,
+  paymentUrl,
+}: {
+  to: string;
+  invoiceNumber: string;
+  amount: number;
+  currency: string;
+  dueDate: string | null;
+  paymentUrl?: string;
+}): Promise<void> {
+  if (!isSmtpConfigured()) {
+    console.log(`\n[DEV] Invoice sent — #${invoiceNumber} → ${to}`);
+    if (paymentUrl) console.log("   Pay URL:", paymentUrl);
+    console.log();
+    return;
+  }
+  const { createElement } = await import("react");
+  const { InvoiceSent } = await import("./templates/InvoiceEmail");
+  const html = await render(
+    createElement(InvoiceSent, { invoiceNumber, amount, currency, dueDate, paymentUrl }),
+  );
+  await sendEmail(to, `Invoice ${invoiceNumber} from PortalPro`, html);
+}
+
+/**
+ * Confirms payment was received to the client.
+ */
+export async function sendPaymentReceivedEmail({
+  to,
+  invoiceNumber,
+  amount,
+  currency,
+}: {
+  to: string;
+  invoiceNumber: string;
+  amount: number;
+  currency: string;
+}): Promise<void> {
+  if (!isSmtpConfigured()) {
+    console.log(`\n[DEV] Payment received — #${invoiceNumber} → ${to}\n`);
+    return;
+  }
+  const { createElement } = await import("react");
+  const { PaymentReceived } = await import("./templates/InvoiceEmail");
+  const html = await render(createElement(PaymentReceived, { invoiceNumber, amount, currency }));
+  await sendEmail(to, `Payment confirmed for invoice ${invoiceNumber}`, html);
+}

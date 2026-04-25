@@ -3,12 +3,16 @@
 import { Button } from "@portalpro/ui";
 import { LogOut, Menu, X } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useState, useTransition } from "react";
 import { signOut } from "next-auth/react";
 
 interface PortalHeaderProps {
   portalName: string;
   tenantName: string;
+  tenantSlug: string;
+  portalSlug: string;
   logoUrl: string | null;
   user: {
     name: string;
@@ -17,9 +21,16 @@ interface PortalHeaderProps {
   };
 }
 
-export function PortalHeader({ portalName, tenantName, logoUrl, user }: PortalHeaderProps) {
+export function PortalHeader({ portalName, tenantName, tenantSlug, portalSlug, logoUrl, user }: PortalHeaderProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [, startTransition] = useTransition();
+  const pathname = usePathname();
+  const base = `/${tenantSlug}/${portalSlug}`;
+
+  const navLinks = [
+    { label: "Overview", href: base },
+    { label: "Invoices", href: `${base}/invoices` },
+  ];
 
   const initials = user.name
     .split(" ")
@@ -48,11 +59,19 @@ export function PortalHeader({ portalName, tenantName, logoUrl, user }: PortalHe
         </div>
 
         {/* Desktop nav */}
-        <nav className="hidden items-center gap-6 text-sm font-medium text-neutral-600 sm:flex">
-          <a href="#" className="hover:text-neutral-900 transition-colors">Projects</a>
-          <a href="#" className="hover:text-neutral-900 transition-colors">Files</a>
-          <a href="#" className="hover:text-neutral-900 transition-colors">Messages</a>
-          <a href="#" className="hover:text-neutral-900 transition-colors">Invoices</a>
+        <nav className="hidden items-center gap-6 text-sm font-medium sm:flex">
+          {navLinks.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              className={[
+                "transition-colors hover:text-neutral-900",
+                pathname === link.href ? "text-neutral-900 font-semibold" : "text-neutral-600",
+              ].join(" ")}
+            >
+              {link.label}
+            </Link>
+          ))}
         </nav>
 
         {/* User + Logout */}
@@ -90,10 +109,19 @@ export function PortalHeader({ portalName, tenantName, logoUrl, user }: PortalHe
       {mobileMenuOpen && (
         <div className="border-t border-neutral-100 bg-white px-4 py-3 sm:hidden">
           <nav className="flex flex-col gap-2 text-sm font-medium text-neutral-600">
-            <a href="#" className="rounded-lg px-3 py-2 hover:bg-neutral-50">Projects</a>
-            <a href="#" className="rounded-lg px-3 py-2 hover:bg-neutral-50">Files</a>
-            <a href="#" className="rounded-lg px-3 py-2 hover:bg-neutral-50">Messages</a>
-            <a href="#" className="rounded-lg px-3 py-2 hover:bg-neutral-50">Invoices</a>
+            {navLinks.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                onClick={() => setMobileMenuOpen(false)}
+                className={[
+                  "rounded-lg px-3 py-2 hover:bg-neutral-50",
+                  pathname === link.href ? "bg-neutral-50 font-semibold text-neutral-900" : "",
+                ].join(" ")}
+              >
+                {link.label}
+              </Link>
+            ))}
           </nav>
         </div>
       )}

@@ -7,6 +7,8 @@ export { VerifyEmail } from "./templates/VerifyEmail";
 export { ResetPassword } from "./templates/ResetPassword";
 export { TeamInvite } from "./templates/TeamInvite";
 export { ClientInvite } from "./templates/ClientInvite";
+export { DeliverableSubmitted, DeliverableReviewed } from "./templates/DeliverableNotification";
+export { InvoiceSent, PaymentReceived } from "./templates/InvoiceEmail";
 
 // Mailer functions (server-safe, no JSX at module level)
 export {
@@ -14,4 +16,8 @@ export {
   sendPasswordResetEmail,
   sendTeamInviteEmail,
   sendClientInviteEmail,
+  sendDeliverableSubmittedEmail,
+  sendDeliverableReviewedEmail,
+  sendInvoiceEmail,
+  sendPaymentReceivedEmail,
 } from "./mailer";

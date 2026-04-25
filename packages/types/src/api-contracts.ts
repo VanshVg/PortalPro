@@ -8,6 +8,7 @@ import type {
   ProjectStatus,
   TaskStatus,
 } from "./enums";
+import type { InvoiceLineItem } from "./schemas";
 
 /** Tenant (workspace) response shape. */
 export interface TenantResponse {
@@ -165,6 +166,7 @@ export interface DeliverableResponse {
 export interface InvoiceResponse {
   id: string;
   number: string;
+  clientEmail: string | null;
   amount: number;
   currency: string;
   status: InvoiceStatus;
@@ -172,6 +174,8 @@ export interface InvoiceResponse {
   paidAt: string | null;
   stripeLink: string | null;
   projectId: string | null;
+  notes: string | null;
+  lineItems: InvoiceLineItem[];
   createdAt: string;
   updatedAt: string;
 }

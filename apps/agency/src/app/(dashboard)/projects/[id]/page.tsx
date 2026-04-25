@@ -23,6 +23,7 @@ import { ProjectProgressCard } from "@/components/projects/ProjectProgressCard";
 import { ProjectProgressBar } from "@/components/projects/ProjectProgressBar";
 import { TimeTracker } from "@/components/projects/TimeTracker";
 import { MilestoneManager } from "@/components/projects/MilestoneManager";
+import { DeliverableManager } from "@/components/projects/DeliverableManager";
 
 interface Props {
   params: { id: string };
@@ -77,7 +78,8 @@ export default async function ProjectDetailPage({ params }: Props) {
   if (!project || project.tenantId !== user.tenantId) notFound();
 
   // Fetch team members, assignee names, and unread message count in parallel
-  const [teamMembers, assigneeUsers, unreadMessageCount] = await Promise.all([
+  // Fetch deliverables alongside other data
+  const [teamMembers, assigneeUsers, unreadMessageCount, deliverables] = await Promise.all([
     prisma.tenantMember.findMany({
       where: { tenantId: user.tenantId },
       include: { user: { select: { id: true, name: true, avatarUrl: true } } },
@@ -94,6 +96,24 @@ export default async function ProjectDetailPage({ params }: Props) {
     }),
     prisma.message.count({
       where: { projectId: params.id, threadId: null, isRead: false, authorId: { not: user.id } },
+    }),
+    prisma.deliverable.findMany({
+      where: { projectId: params.id },
+      orderBy: { sortOrder: "asc" },
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        status: true,
+        fileIds: true,
+        submittedAt: true,
+        reviewedAt: true,
+        reviewedBy: true,
+        feedback: true,
+        sortOrder: true,
+        createdAt: true,
+        updatedAt: true,
+      },
     }),
   ]);
 
@@ -228,6 +248,9 @@ export default async function ProjectDetailPage({ params }: Props) {
           <TabsTrigger value="tasks">
             Tasks {allTaskCount > 0 && `(${allTaskCount})`}
           </TabsTrigger>
+          <TabsTrigger value="deliverables">
+            Deliverables {deliverables.length > 0 && `(${deliverables.length})`}
+          </TabsTrigger>
           <TabsTrigger value="files">
             Files {project._count.files > 0 && `(${project._count.files})`}
           </TabsTrigger>
@@ -321,6 +344,27 @@ export default async function ProjectDetailPage({ params }: Props) {
               )}
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="deliverables" className="mt-6">
+          <DeliverableManager
+            projectId={project.id}
+            initialDeliverables={deliverables.map((d) => ({
+              id: d.id,
+              title: d.title,
+              description: d.description,
+              status: d.status as "DRAFT" | "SUBMITTED" | "APPROVED" | "REVISION_REQUESTED" | "FINAL",
+              fileIds: d.fileIds,
+              submittedAt: d.submittedAt?.toISOString() ?? null,
+              reviewedAt: d.reviewedAt?.toISOString() ?? null,
+              reviewedBy: d.reviewedBy,
+              feedback: d.feedback,
+              sortOrder: d.sortOrder,
+              createdAt: d.createdAt.toISOString(),
+              updatedAt: d.updatedAt.toISOString(),
+            }))}
+            canEdit={["OWNER", "ADMIN", "EDITOR"].includes(user.role ?? "")}
+          />
         </TabsContent>
 
         <TabsContent value="tasks" className="mt-6">

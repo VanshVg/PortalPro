@@ -114,15 +114,44 @@ export const updateTimeEntrySchema = z.object({
 });
 export type UpdateTimeEntryInput = z.infer<typeof updateTimeEntrySchema>;
 
+/** A single line item on an invoice. */
+export const invoiceLineItemSchema = z.object({
+  title: z.string().min(1, "Line item title is required").max(200),
+  description: z.string().max(500).optional(),
+  quantity: z.number().positive().default(1),
+  unitPrice: z.number().min(0, "Unit price cannot be negative"),
+});
+export type InvoiceLineItem = z.infer<typeof invoiceLineItemSchema>;
+
 /** Create an invoice. */
 export const createInvoiceSchema = z.object({
   number: z.string().min(1, "Invoice number is required").max(50),
-  amount: z.number().positive("Amount must be positive"),
+  clientEmail: z.string().email("Valid email required").optional(),
   currency: z.string().length(3, "Currency must be 3-letter ISO code").default("USD"),
   dueDate: z.coerce.date().optional(),
   projectId: z.string().cuid().optional(),
+  notes: z.string().max(2000).optional(),
+  lineItems: z.array(invoiceLineItemSchema).min(1, "At least one line item is required"),
 });
 export type CreateInvoiceInput = z.infer<typeof createInvoiceSchema>;
+
+/** Update an existing invoice (DRAFT only). */
+export const updateInvoiceSchema = z.object({
+  number: z.string().min(1).max(50).optional(),
+  clientEmail: z.string().email().optional(),
+  currency: z.string().length(3).optional(),
+  dueDate: z.coerce.date().nullable().optional(),
+  projectId: z.string().cuid().nullable().optional(),
+  notes: z.string().max(2000).optional(),
+  lineItems: z.array(invoiceLineItemSchema).min(1).optional(),
+});
+export type UpdateInvoiceInput = z.infer<typeof updateInvoiceSchema>;
+
+/** Send an invoice to client. */
+export const sendInvoiceSchema = z.object({
+  clientEmail: z.string().email("Valid email required"),
+});
+export type SendInvoiceInput = z.infer<typeof sendInvoiceSchema>;
 
 /** Send a message in a project thread. */
 export const createMessageSchema = z.object({
@@ -135,9 +164,23 @@ export type CreateMessageInput = z.infer<typeof createMessageSchema>;
 export const createDeliverableSchema = z.object({
   title: z.string().min(1, "Title is required").max(200),
   description: z.string().max(2000).optional(),
-  fileIds: z.array(z.string().cuid()).default([]),
+  fileIds: z.array(z.string()).default([]),
 });
 export type CreateDeliverableInput = z.infer<typeof createDeliverableSchema>;
+
+/** Update a deliverable (DRAFT only). */
+export const updateDeliverableSchema = z.object({
+  title: z.string().min(1).max(200).optional(),
+  description: z.string().max(2000).nullable().optional(),
+  fileIds: z.array(z.string()).optional(),
+});
+export type UpdateDeliverableInput = z.infer<typeof updateDeliverableSchema>;
+
+/** Request a revision on a submitted deliverable. */
+export const requestRevisionSchema = z.object({
+  feedback: z.string().min(1, "Feedback is required").max(2000),
+});
+export type RequestRevisionInput = z.infer<typeof requestRevisionSchema>;
 
 // ============================================
 // Phase 2: Tenant, Team, Portal, File Schemas

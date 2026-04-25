@@ -8,7 +8,7 @@ import { requestIdMiddleware } from "./middleware/request-id.middleware";
 import { authMiddleware } from "./middleware/auth.middleware";
 import { tenantMiddleware } from "./middleware/tenant.middleware";
 import { logger } from "./lib/logger";
-import { PORT, AGENCY_URL, PORTAL_URL } from "./lib/env";
+import { PORT, AGENCY_URL, PORTAL_URL, STRIPE_WEBHOOK_SECRET } from "./lib/env";
 import { tenantRoutes } from "./routes/tenants/tenants.routes";
 import { portalRoutes } from "./routes/portals/portals.routes";
 import { projectRoutes } from "./routes/projects/projects.routes";
@@ -17,7 +17,12 @@ import milestoneRoutes from "./routes/milestones/milestones.routes";
 import taskRoutes, { commentRouter } from "./routes/tasks/tasks.routes";
 import messageRoutes from "./routes/messages/messages.routes";
 import timeEntryRoutes from "./routes/time-entries/time-entries.routes";
+import deliverableRoutes from "./routes/deliverables/deliverables.routes";
+import invoiceRoutes from "./routes/invoices/invoices.routes";
 import { initSocketServer } from "./lib/socket";
+import { getStripe } from "./lib/stripe";
+import { markInvoicePaid } from "./routes/invoices/invoices.service";
+import { prisma } from "@portalpro/database";
 
 const app = express();
 
@@ -34,6 +39,48 @@ app.use(requestIdMiddleware);
 app.get("/health", (_req, res) => {
   res.json({ status: "ok", timestamp: new Date().toISOString() });
 });
+
+// Stripe webhook must use raw body — mount before express.json()
+app.post(
+  "/api/v1/webhooks/stripe",
+  express.raw({ type: "application/json" }),
+  async (req, res) => {
+    const stripe = getStripe();
+    if (!stripe || !STRIPE_WEBHOOK_SECRET) {
+      res.status(400).json({ error: "Stripe not configured" });
+      return;
+    }
+
+    const sig = req.headers["stripe-signature"] as string;
+    let event: import("stripe").Stripe.Event;
+
+    try {
+      event = stripe.webhooks.constructEvent(req.body as Buffer, sig, STRIPE_WEBHOOK_SECRET);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Unknown error";
+      logger.warn({ err }, "Stripe webhook signature verification failed");
+      res.status(400).json({ error: `Webhook Error: ${message}` });
+      return;
+    }
+
+    if (event.type === "checkout.session.completed" || event.type === "payment_intent.succeeded") {
+      const metadata = (event.data.object as { metadata?: { invoiceNumber?: string } }).metadata;
+      if (metadata?.invoiceNumber) {
+        const invoice = await prisma.invoice.findFirst({
+          where: { number: metadata.invoiceNumber },
+          select: { id: true, tenantId: true },
+        });
+        if (invoice) {
+          await markInvoicePaid(invoice.tenantId, invoice.id).catch((err: unknown) => {
+            logger.error({ err, invoiceNumber: metadata.invoiceNumber }, "Failed to mark invoice paid via webhook");
+          });
+        }
+      }
+    }
+
+    res.json({ received: true });
+  },
+);
 
 // ===== Protected API =====
 // All /api/v1/* routes require authentication + tenant resolution
@@ -61,6 +108,10 @@ apiRouter.use("/tasks", taskRoutes);
 apiRouter.use("/comments", commentRouter);
 apiRouter.use("/messages", messageRoutes);
 apiRouter.use("/time-entries", timeEntryRoutes);
+
+// Phase 4: Billing & Approval
+apiRouter.use("/deliverables", deliverableRoutes);
+apiRouter.use("/invoices", invoiceRoutes);
 
 app.use("/api/v1", apiRouter);
 

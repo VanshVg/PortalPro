@@ -3,7 +3,7 @@ import { auth } from "@/auth";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle, Badge } from "@portalpro/ui";
-import { FolderOpen, CheckSquare, MessageSquare, Clock } from "lucide-react";
+import { FolderOpen, CheckSquare, MessageSquare, Clock, FileText } from "lucide-react";
 
 interface PortalDashboardProps {
   params: { tenantSlug: string; portalSlug: string };
@@ -29,9 +29,22 @@ export default async function PortalDashboardPage({ params }: PortalDashboardPro
       slug: params.portalSlug,
       tenant: { slug: params.tenantSlug },
     },
-    select: { id: true, name: true },
+    select: {
+      id: true,
+      name: true,
+      tenant: {
+        select: {
+          invoices: {
+            where: { status: { in: ["SENT", "OVERDUE"] } },
+            select: { id: true },
+          },
+        },
+      },
+    },
   });
   if (!portal) notFound();
+
+  const pendingInvoiceCount = portal.tenant.invoices.length;
 
   // Load projects for this portal
   const projects = await prisma.project.findMany({
@@ -172,6 +185,33 @@ export default async function PortalDashboardPage({ params }: PortalDashboardPro
             })}
           </div>
         )}
+      </div>
+
+      {/* Invoices quick link */}
+      <div>
+        <h2 className="mb-4 text-lg font-semibold text-neutral-800">Billing</h2>
+        <Link href={`/${params.tenantSlug}/${params.portalSlug}/invoices`}>
+          <div className="rounded-xl border border-neutral-200 bg-white p-5 flex items-center justify-between hover:border-neutral-300 hover:shadow-sm transition-all cursor-pointer">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: "var(--portal-primary-light, #f0f7ff)" }}>
+                <FileText className="h-5 w-5" style={{ color: "var(--portal-primary, #1B4D6E)" }} />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-neutral-800">Invoices</p>
+                <p className="text-xs text-neutral-400">
+                  {pendingInvoiceCount > 0
+                    ? `${pendingInvoiceCount} invoice${pendingInvoiceCount > 1 ? "s" : ""} awaiting payment`
+                    : "View your invoices and payment history"}
+                </p>
+              </div>
+            </div>
+            {pendingInvoiceCount > 0 && (
+              <span className="inline-flex items-center justify-center h-6 w-6 rounded-full bg-amber-100 text-amber-700 text-xs font-bold">
+                {pendingInvoiceCount}
+              </span>
+            )}
+          </div>
+        </Link>
       </div>
     </div>
   );

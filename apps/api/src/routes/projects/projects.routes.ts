@@ -11,6 +11,7 @@ import { projectMilestoneRouter } from "../milestones/milestones.routes";
 import { projectTaskRouter } from "../tasks/tasks.routes";
 import { projectMessageRouter } from "../messages/messages.routes";
 import { projectTimeEntryRouter } from "../time-entries/time-entries.routes";
+import { projectDeliverableRouter } from "../deliverables/deliverables.routes";
 
 const router = Router();
 
@@ -25,5 +26,8 @@ router.use("/:projectId/milestones", projectMilestoneRouter);
 router.use("/:projectId/tasks", projectTaskRouter);
 router.use("/:projectId/messages", projectMessageRouter);
 router.use("/:projectId/time-entries", projectTimeEntryRouter);
+
+// Nested sub-resources (Phase 4)
+router.use("/:projectId/deliverables", projectDeliverableRouter);
 
 export { router as projectRoutes };

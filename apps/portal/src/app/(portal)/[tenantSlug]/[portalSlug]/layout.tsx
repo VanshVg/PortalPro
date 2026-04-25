@@ -63,6 +63,8 @@ export default async function PortalLayout({ children, params }: PortalLayoutPro
       <PortalHeader
         portalName={portal.name}
         tenantName={tenant.name}
+        tenantSlug={params.tenantSlug}
+        portalSlug={params.portalSlug}
         logoUrl={portal.logo}
         user={session.user}
       />
