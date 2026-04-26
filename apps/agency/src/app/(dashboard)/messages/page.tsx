@@ -1,7 +1,8 @@
+import { Suspense } from "react";
 import { requireSession } from "@/lib/session";
 import { prisma } from "@portalpro/database";
 import Link from "next/link";
-import { Card, CardContent } from "@portalpro/ui";
+import { Card, CardContent, Skeleton } from "@portalpro/ui";
 import { MessageSquare, ExternalLink, Reply } from "lucide-react";
 import { notFound } from "next/navigation";
 
@@ -11,11 +12,20 @@ export default async function MessagesPage() {
   const user = await requireSession();
   if (!user.tenantId) notFound();
 
-  // Fetch recent top-level messages across all tenant projects, newest first
+  return (
+    <div className="space-y-8">
+      <Suspense fallback={<MessagesSkeleton />}>
+        <MessagesFeed tenantId={user.tenantId} />
+      </Suspense>
+    </div>
+  );
+}
+
+async function MessagesFeed({ tenantId }: { tenantId: string }) {
   const recentMessages = await prisma.message.findMany({
     where: {
-      project: { tenantId: user.tenantId },
-      threadId: null, // top-level only
+      project: { tenantId },
+      threadId: null,
     },
     include: {
       author: { select: { id: true, name: true, avatarUrl: true } },
@@ -26,7 +36,6 @@ export default async function MessagesPage() {
     take: 50,
   });
 
-  // Group messages by project
   const byProject = new Map<string, typeof recentMessages>();
   for (const msg of recentMessages) {
     const key = msg.project.id;
@@ -37,8 +46,7 @@ export default async function MessagesPage() {
   const totalUnread = recentMessages.filter((m) => !m.isRead).length;
 
   return (
-    <div className="space-y-8">
-      {/* Header */}
+    <>
       <div className="flex items-start justify-between">
         <div>
           <h1 className="text-2xl font-bold text-neutral-800">Messages</h1>
@@ -69,7 +77,6 @@ export default async function MessagesPage() {
 
             return (
               <div key={projectId}>
-                {/* Project heading */}
                 <div className="mb-3 flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <h2 className="text-sm font-semibold text-neutral-700">{projectName}</h2>
@@ -113,12 +120,10 @@ export default async function MessagesPage() {
                               !msg.isRead ? "bg-blue-50/40" : "",
                             ].join(" ")}
                           >
-                            {/* Avatar */}
                             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#1B4D6E] text-[11px] font-bold text-white">
                               {initials}
                             </div>
 
-                            {/* Content */}
                             <div className="flex-1 min-w-0">
                               <div className="flex items-baseline gap-2 mb-0.5">
                                 <span className="text-xs font-semibold text-neutral-800">
@@ -151,6 +156,41 @@ export default async function MessagesPage() {
           })}
         </div>
       )}
-    </div>
+    </>
+  );
+}
+
+function MessagesSkeleton() {
+  return (
+    <>
+      <div className="flex items-start justify-between">
+        <div className="space-y-2">
+          <Skeleton className="h-7 w-32" />
+          <Skeleton className="h-4 w-72" />
+        </div>
+      </div>
+      <div className="space-y-6">
+        {Array.from({ length: 2 }).map((_, i) => (
+          <div key={i}>
+            <div className="mb-3 flex items-center justify-between">
+              <Skeleton className="h-4 w-40" />
+              <Skeleton className="h-3 w-20" />
+            </div>
+            <div className="rounded-xl border border-neutral-200 bg-white">
+              {Array.from({ length: 3 }).map((__, j) => (
+                <div key={j} className="flex items-start gap-3 border-b border-neutral-50 p-4 last:border-b-0">
+                  <Skeleton className="h-8 w-8 rounded-full" />
+                  <div className="flex-1 space-y-2">
+                    <Skeleton className="h-3 w-32" />
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-3/4" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </>
   );
 }

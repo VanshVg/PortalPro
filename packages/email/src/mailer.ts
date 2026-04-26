@@ -1,6 +1,6 @@
 import nodemailer from "nodemailer";
 import { render } from "@react-email/components";
-import { SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, SMTP_FROM, AGENCY_URL } from "./env";
+import { SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, SMTP_FROM, AGENCY_URL, PORTAL_URL } from "./env";
 
 /**
  * Creates a Nodemailer transporter from environment variables.
@@ -242,6 +242,45 @@ export async function sendInvoiceEmail({
     createElement(InvoiceSent, { invoiceNumber, amount, currency, dueDate, paymentUrl }),
   );
   await sendEmail(to, `Invoice ${invoiceNumber} from PortalPro`, html);
+}
+
+/**
+ * Notifies a user that a new message was posted in a project they have access to.
+ */
+export async function sendNewMessageEmail({
+  to,
+  recipientName,
+  senderName,
+  projectName,
+  messagePreview,
+  messagesUrl,
+  isPortalUser = false,
+}: {
+  to: string;
+  recipientName: string;
+  senderName: string;
+  projectName: string;
+  messagePreview: string;
+  messagesUrl: string;
+  isPortalUser?: boolean;
+}): Promise<void> {
+  if (!isSmtpConfigured()) {
+    console.log(`\n[DEV] New message — "${projectName}" from ${senderName} → ${to}\n`);
+    return;
+  }
+  const { createElement } = await import("react");
+  const { NewMessageEmail } = await import("./templates/NewMessage");
+  const html = await render(
+    createElement(NewMessageEmail, {
+      recipientName,
+      senderName,
+      projectName,
+      messagePreview,
+      messagesUrl,
+      agencyUrl: isPortalUser ? PORTAL_URL : AGENCY_URL,
+    }),
+  );
+  await sendEmail(to, `New message in ${projectName} from ${senderName}`, html);
 }
 
 /**

@@ -12,3 +12,10 @@ export const PORTAL_URL = process.env.PORTAL_URL ?? process.env.NEXT_PUBLIC_PORT
 
 /** Base URL of the Express API server. */
 export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
+
+// R2 / Cloudflare Storage (server-side only — used for presigned download URLs)
+export const R2_ACCOUNT_ID = process.env.R2_ACCOUNT_ID ?? "";
+export const R2_ACCESS_KEY_ID = process.env.R2_ACCESS_KEY_ID ?? "";
+export const R2_SECRET_ACCESS_KEY = process.env.R2_SECRET_ACCESS_KEY ?? "";
+export const R2_BUCKET = process.env.R2_BUCKET ?? "portalpro";
+export const R2_PUBLIC_URL = process.env.R2_PUBLIC_URL ?? "";

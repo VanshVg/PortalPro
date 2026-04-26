@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback, useId } from "react";
+import dynamic from "next/dynamic";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -28,6 +29,8 @@ import {
 } from "lucide-react";
 import type { InvoiceResponse } from "@portalpro/types";
 import { API_URL } from "@/lib/env";
+
+const InvoicePDFDownload = dynamic(() => import("./InvoicePDFDownload"), { ssr: false });
 
 // ===== Schemas =====
 
@@ -612,6 +615,9 @@ export function InvoiceManager({ initialInvoices, projects }: InvoiceManagerProp
                             {isLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : "Mark Paid"}
                           </button>
                         )}
+
+                        {/* PDF Download */}
+                        <InvoicePDFDownload invoice={inv} />
 
                         {/* Cancel */}
                         {!isPaid && !isCancelled && (

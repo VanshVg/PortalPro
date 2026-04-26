@@ -1,4 +1,12 @@
 <p align="center">
+  <img src="logo.png" alt="PortalPro" width="120" />
+</p>
+
+<p align="center">
+  <strong>White-Label Client Portal Builder for Agencies & Consultants</strong>
+</p>
+
+<p align="center">
   <img src="https://img.shields.io/badge/Next.js-14+-black?style=flat-square&logo=next.js" alt="Next.js" />
   <img src="https://img.shields.io/badge/TypeScript-Strict-3178C6?style=flat-square&logo=typescript" alt="TypeScript" />
   <img src="https://img.shields.io/badge/Prisma-ORM-2D3748?style=flat-square&logo=prisma" alt="Prisma" />
@@ -7,25 +15,30 @@
   <img src="https://img.shields.io/badge/License-MIT-green?style=flat-square" alt="License" />
 </p>
 
-# PortalPro
+---
 
-**White-Label Client Portal Builder for Agencies & Consultants**
+## Live Demo
 
-PortalPro is a multi-tenant SaaS platform that lets agencies create branded client portals for project management, file sharing, real-time communication, deliverable approvals, and invoicing — all under their own brand.
+| App | URL | Credentials |
+|-----|-----|-------------|
+| **Agency Dashboard** | [portalpro-agency.vercel.app](https://portalpro-agency.vercel.app) | `alice@horizon.agency` / `demo1234` |
+| **Client Portal** | [portalpro-portal.vercel.app](https://portalpro-portal.vercel.app/horizon/techvision) | `dana@techvision.co` / `demo1234` |
+
+> The demo uses a shared Supabase database — data resets nightly.
 
 ---
 
-## Why PortalPro?
+## What is PortalPro?
 
-Agencies juggle emails, Drive links, Notion docs, and separate invoicing tools. Clients have no single place to check project status. PortalPro solves this by providing one branded hub per client with:
+Agencies juggle emails, Drive links, Notion docs, and separate invoicing tools. Clients have no single place to check project status. PortalPro solves this by providing **one branded hub per client** with:
 
 - **Project & Task Management** — Kanban boards, milestones, dependencies, time tracking
-- **File Sharing** — Upload, version history, in-browser preview (PDF, images)
-- **Real-time Messaging** — Threaded conversations with rich text and @mentions
-- **Deliverable Approvals** — Multi-stage review workflows with revision tracking
-- **Invoicing** — Multi-currency invoices with Stripe payment links
+- **File Sharing** — Upload to Cloudflare R2, version history, folder navigation
+- **Real-time Messaging** — Threaded conversations with Socket.io and email notifications
+- **Deliverable Approvals** — Multi-stage review workflows with full revision history
+- **Invoicing & Payments** — Multi-currency invoices, Stripe payment links, PDF export
 - **White-Label Branding** — Custom logo, colors, and domain per client portal
-- **International-First** — GBP/EUR/USD/AED, RTL Arabic support, GDPR-ready
+- **International-First** — GBP/EUR/USD/AED, WCAG AA accessibility, GDPR-ready
 
 ---
 
@@ -34,212 +47,220 @@ Agencies juggle emails, Drive links, Notion docs, and separate invoicing tools. 
 | Layer | Technology |
 |-------|-----------|
 | **Monorepo** | Turborepo + pnpm workspaces |
-| **Frontend** | Next.js 14+ (App Router), React 18, Tailwind CSS, shadcn/ui |
-| **Backend** | Node.js + Express.js |
-| **Database** | PostgreSQL (Supabase), Prisma ORM |
-| **Auth** | NextAuth.js v5 (magic link + credentials) |
-| **File Storage** | Cloudflare R2 (S3-compatible) |
-| **Email** | Resend (transactional) |
-| **Payments** | Stripe Payment Links |
-| **Real-time** | Socket.io |
-| **Cache** | Upstash Redis |
-| **Deployment** | Vercel |
+| **Frontend** | Next.js 14 (App Router), React 18, Tailwind CSS, shadcn/ui |
+| **Backend** | Node.js + Express.js (layered: Route → Controller → Service) |
+| **Database** | PostgreSQL (Supabase), Prisma ORM with tenant middleware |
+| **Auth** | NextAuth.js v5 — credentials + magic link |
+| **File Storage** | Cloudflare R2 (S3-compatible, presigned URLs) |
+| **Email** | Nodemailer via Gmail SMTP + React Email templates |
+| **Payments** | Stripe Payment Links + webhook handler |
+| **Real-time** | Socket.io (project-scoped rooms) |
+| **Rate Limiting** | Upstash Redis |
+| **CI/CD** | GitHub Actions (typecheck → lint → build) |
+| **Deployment** | Vercel (agency + portal) + Railway (API) |
 
 ---
 
 ## Architecture
 
 ```
-portalpro/
+portalpro/                    ← Turborepo monorepo root (git root)
 ├── apps/
-│   ├── agency/       ← Agency Dashboard      (Next.js, port 3000)
-│   ├── portal/       ← Client Portal         (Next.js, port 3001)
-│   └── api/          ← REST API Server       (Express,  port 4000)
+│   ├── agency/               ← Agency Dashboard  (Next.js, port 3000)
+│   ├── portal/               ← Client Portal     (Next.js, port 3001)
+│   └── api/                  ← REST API + Socket  (Express, port 4000)
 │
 ├── packages/
-│   ├── database/     ← Prisma schema, client, tenant isolation middleware
-│   ├── ui/           ← Shared component library (shadcn/ui based)
-│   ├── utils/        ← Pure utilities (formatting, validation)
-│   ├── types/        ← TypeScript types, Zod schemas, API contracts
-│   ├── email/        ← Email templates (react-email)
-│   ├── auth/         ← NextAuth config, RBAC guards
-│   └── config/       ← Shared Tailwind preset with design tokens
+│   ├── database/             ← Prisma schema, singleton client, tenant middleware
+│   ├── ui/                   ← Shared component library (shadcn/ui based)
+│   ├── types/                ← TypeScript interfaces, Zod schemas, error classes
+│   ├── utils/                ← Pure utilities (currency, dates, slugify)
+│   ├── email/                ← React Email templates + Nodemailer mailer
+│   ├── auth/                 ← NextAuth config, RBAC role hierarchy
+│   └── config/               ← Shared Tailwind preset with design tokens
 │
-├── tooling/
-│   ├── eslint/       ← Shared ESLint config
-│   ├── typescript/   ← Shared tsconfig presets
-│   └── prettier/     ← Shared Prettier config
-│
-└── infra/
-    └── docker/       ← Docker Compose (PostgreSQL + Redis)
+└── tooling/
+    ├── eslint/               ← Shared ESLint config
+    ├── typescript/           ← Shared tsconfig presets
+    └── prettier/             ← Shared Prettier config
 ```
 
-**Multi-tenancy**: Shared database with application-level row isolation via Prisma middleware. Every tenant-scoped query is automatically filtered by `tenantId`.
+**Multi-tenancy**: Shared database with application-level row isolation via Prisma middleware. Every tenant-scoped query is automatically filtered by `tenantId` — no cross-tenant data leakage is possible.
+
+---
+
+## Key Engineering Decisions
+
+| Decision | Rationale |
+|----------|-----------|
+| **Shared DB multi-tenancy** | Simpler ops than per-tenant DBs; Prisma middleware enforces isolation |
+| **Express over tRPC** | Explicit REST API is easier to demonstrate and document for portfolio |
+| **NextAuth JWE tokens** | API decrypts NextAuth session tokens using HKDF — no separate auth service |
+| **Cloudflare R2** | S3-compatible, 10GB free tier, no egress fees |
+| **Nodemailer + Gmail** | Zero external service dependency for email in development |
+| **Socket.io project rooms** | Lightweight real-time without a managed WS service |
 
 ---
 
 ## Prerequisites
 
-Before you begin, make sure you have the following installed:
-
-| Tool | Version | Check |
-|------|---------|-------|
-| **Node.js** | 20.x LTS or higher | `node --version` |
-| **pnpm** | 10.x | `pnpm --version` |
-| **Docker** | Latest (for local DB) | `docker --version` |
-| **Git** | Latest | `git --version` |
-
-If you don't have pnpm installed:
-```bash
-npm install -g pnpm
-```
+| Tool | Version | Install |
+|------|---------|---------|
+| **Node.js** | ≥ 20 LTS | [nodejs.org](https://nodejs.org) |
+| **pnpm** | ≥ 10 | `npm install -g pnpm` |
+| **Docker** | Latest | [docker.com](https://docker.com) (for local DB) |
 
 ---
 
-## Getting Started
+## Local Development
 
-### 1. Clone the repository
+### 1. Clone and install
 
 ```bash
 git clone https://github.com/your-username/portalpro.git
 cd portalpro
-```
-
-### 2. Install dependencies
-
-```bash
 pnpm install
 ```
 
-### 3. Set up environment variables
+### 2. Environment variables
 
 ```bash
 cp .env.example .env.local
 ```
 
-Open `.env.local` and fill in the required values. For local development, the defaults work for the database if you use the Docker setup in the next step.
+Fill in `.env.local`. For local development, only `AUTH_SECRET` and `DATABASE_URL` are required:
 
-Generate a NextAuth secret:
 ```bash
+# Generate a secure AUTH_SECRET
 openssl rand -base64 32
 ```
 
-Paste the output as the value of `NEXTAUTH_SECRET` in `.env.local`.
-
-### 4. Start the database
-
-**Option A: Docker (recommended)**
+### 3. Start the database
 
 ```bash
 docker compose -f infra/docker/docker-compose.yml up -d
 ```
 
-This starts PostgreSQL (port 5432) and Redis (port 6379) locally.
-
-**Option B: Supabase**
-
-Create a free project at [supabase.com](https://supabase.com), copy the connection string, and set `DATABASE_URL` and `DIRECT_URL` in `.env.local`.
-
-### 5. Set up the database schema
+### 4. Set up schema and seed demo data
 
 ```bash
-# Push the Prisma schema to the database
-pnpm db:push
-
-# (Optional) Seed with sample data
-pnpm db:seed
+pnpm db:push    # push schema to DB
+pnpm db:seed    # seed with demo data
 ```
 
-### 6. Generate the Prisma client
-
-```bash
-cd packages/database
-pnpm exec prisma generate
-cd ../..
-```
-
-### 7. Start all apps in development mode
+### 5. Start all apps
 
 ```bash
 pnpm dev
 ```
 
-This starts all three apps concurrently via Turborepo:
+| App | URL |
+|-----|-----|
+| Agency Dashboard | http://localhost:3000 |
+| Client Portal | http://localhost:3001/horizon/techvision |
+| API Server | http://localhost:4000 |
 
-| App | URL | Description |
-|-----|-----|-------------|
-| Agency Dashboard | [http://localhost:3000](http://localhost:3000) | Agency team workspace |
-| Client Portal | [http://localhost:3001](http://localhost:3001) | Client-facing branded portal |
-| API Server | [http://localhost:4000](http://localhost:4000) | REST API backend |
+### Demo Credentials
 
-You can also start individual apps:
-```bash
-pnpm dev --filter=@portalpro/agency    # Agency dashboard only
-pnpm dev --filter=@portalpro/portal    # Client portal only
-pnpm dev --filter=@portalpro/api       # API server only
-```
+| User | Email | Password | Role |
+|------|-------|----------|------|
+| Alice Chen | `alice@horizon.agency` | `demo1234` | Agency Owner |
+| Bob Martinez | `bob@horizon.agency` | `demo1234` | Agency Editor |
+| Carol Osei | `carol@sparkcreative.io` | `demo1234` | Agency Owner (Spark) |
+| Dana Whitfield | `dana@techvision.co` | `demo1234` | Portal Admin |
+| Maya Patel | `maya@techvision.co` | `demo1234` | Portal Viewer |
 
 ---
 
 ## Available Scripts
 
-All scripts run from the monorepo root via Turborepo:
-
 | Command | Description |
 |---------|-------------|
-| `pnpm dev` | Start all apps in development mode |
+| `pnpm dev` | Start all apps concurrently |
 | `pnpm build` | Production build for all apps and packages |
-| `pnpm lint` | Run ESLint across the entire monorepo |
-| `pnpm lint:fix` | Auto-fix lint issues |
-| `pnpm typecheck` | Run TypeScript type checking |
-| `pnpm test` | Run unit tests (Vitest) |
+| `pnpm typecheck` | TypeScript strict-mode check across entire monorepo |
+| `pnpm lint` | ESLint across the entire monorepo |
 | `pnpm format` | Format all files with Prettier |
-| `pnpm format:check` | Check formatting without modifying |
-| `pnpm clean` | Remove all build artifacts |
-| `pnpm db:push` | Push Prisma schema to the database |
-| `pnpm db:migrate` | Run Prisma migrations |
-| `pnpm db:seed` | Seed the database with sample data |
-| `pnpm db:studio` | Open Prisma Studio (database GUI) |
+| `pnpm db:push` | Push Prisma schema changes to the DB |
+| `pnpm db:seed` | Seed demo data (clears existing data first) |
+| `pnpm db:studio` | Open Prisma Studio GUI |
 
 ---
 
-## Third-Party Service Setup
+## Deployment
 
-These services are optional for local development but required for full functionality:
+### Agency + Portal apps → Vercel
 
-| Service | Purpose | Free Tier | Setup |
-|---------|---------|-----------|-------|
-| **Supabase** | PostgreSQL database | 500MB, 2 connections | [supabase.com](https://supabase.com) |
-| **Cloudflare R2** | File storage | 10GB storage | [dash.cloudflare.com](https://dash.cloudflare.com) |
-| **Resend** | Transactional email | 100 emails/day | [resend.com](https://resend.com) |
-| **Stripe** | Payment processing | Pay-per-use (2.9% + 30c) | [stripe.com](https://stripe.com) |
-| **Upstash** | Redis (cache/rate limit) | 10K commands/day | [upstash.com](https://upstash.com) |
+1. Connect your GitHub repo to Vercel
+2. Create **two** Vercel projects from the same repo
+3. For each project, configure in the Vercel dashboard:
+
+**Agency project:**
+| Setting | Value |
+|---------|-------|
+| Root Directory | `portalpro` |
+| Build Command | `pnpm build --filter=@portalpro/agency` |
+| Install Command | `pnpm install --frozen-lockfile` |
+| Output Directory | `apps/agency/.next` |
+
+**Portal project:**
+| Setting | Value |
+|---------|-------|
+| Root Directory | `portalpro` |
+| Build Command | `pnpm build --filter=@portalpro/portal` |
+| Install Command | `pnpm install --frozen-lockfile` |
+| Output Directory | `apps/portal/.next` |
+
+4. Add all environment variables from `.env.example` in each project's Vercel settings
+
+### API server → Railway
+
+The Express + Socket.io API cannot run on Vercel (requires persistent connections). Use Railway:
+
+1. Create a new Railway project → "Deploy from GitHub repo"
+2. Set **Root Directory** to `portalpro`
+3. Railway auto-detects `apps/api/railway.toml` and uses nixpacks to build
+4. Add all environment variables in Railway's dashboard
+5. Run database migrations in Railway's shell: `pnpm db:push`
+
+### Environment Variables Checklist
+
+| Variable | Agency | Portal | API |
+|----------|--------|--------|-----|
+| `DATABASE_URL` | ✓ | ✓ | ✓ |
+| `DIRECT_URL` | ✓ | ✓ | ✓ |
+| `AUTH_SECRET` | ✓ | ✓ | ✓ |
+| `AUTH_URL` | ✓ | — | — |
+| `NEXT_PUBLIC_API_URL` | ✓ | ✓ | — |
+| `NEXT_PUBLIC_AGENCY_URL` | ✓ | ✓ | — |
+| `NEXT_PUBLIC_PORTAL_URL` | ✓ | ✓ | — |
+| `R2_ACCOUNT_ID` | ✓ | ✓ | ✓ |
+| `R2_ACCESS_KEY_ID` | ✓ | ✓ | ✓ |
+| `R2_SECRET_ACCESS_KEY` | ✓ | ✓ | ✓ |
+| `R2_BUCKET_NAME` | ✓ | ✓ | ✓ |
+| `SMTP_HOST` | — | — | ✓ |
+| `SMTP_USER` | — | — | ✓ |
+| `SMTP_PASS` | — | — | ✓ |
+| `STRIPE_SECRET_KEY` | — | — | ✓ |
+| `STRIPE_WEBHOOK_SECRET` | — | — | ✓ |
+| `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | ✓ | ✓ | — |
+| `UPSTASH_REDIS_REST_URL` | — | — | ✓ |
+| `UPSTASH_REDIS_REST_TOKEN` | — | — | ✓ |
 
 ---
 
-## Project Structure Deep Dive
+## Third-Party Services
 
-### Apps
+All services have generous free tiers — total monthly cost for a portfolio deployment is **$0–$5**.
 
-- **`apps/agency`** — The agency-facing dashboard where teams manage clients, projects, tasks, files, and invoices. Built with Next.js App Router and server components.
-
-- **`apps/portal`** — The client-facing portal. Lightweight, mobile-first, and white-label themed. Clients see their projects, review deliverables, send messages, and pay invoices here.
-
-- **`apps/api`** — The shared REST API server. Follows a strict layered architecture: Route → Controller → Service → Prisma. Handles auth, tenant resolution, RBAC, and all business logic.
-
-### Shared Packages
-
-- **`@portalpro/database`** — Prisma schema with 19 models, singleton client, and tenant isolation middleware that auto-filters all queries by `tenantId`.
-
-- **`@portalpro/ui`** — Shared React component library built on shadcn/ui patterns. Includes Button, Input, Card, Badge, StatusBadge with PortalPro design tokens.
-
-- **`@portalpro/types`** — Single source of truth for TypeScript interfaces, Zod validation schemas, error classes, and API contracts shared between frontend and backend.
-
-- **`@portalpro/utils`** — Pure utility functions: currency formatting (multi-locale), date formatting, string helpers, validation (email, slug, color).
-
-- **`@portalpro/auth`** — NextAuth.js v5 configuration, RBAC role hierarchy (OWNER > ADMIN > EDITOR > VIEWER), and permission guard helpers.
-
-- **`@portalpro/config`** — Shared Tailwind CSS preset containing the full PortalPro design system: color palette, typography, animations, shadows.
+| Service | Purpose | Free Tier |
+|---------|---------|-----------|
+| [Supabase](https://supabase.com) | PostgreSQL | 500 MB, 2 connections |
+| [Cloudflare R2](https://dash.cloudflare.com) | File storage | 10 GB, no egress fees |
+| [Stripe](https://stripe.com) | Payments | Pay-per-use (2.9% + 30¢) |
+| [Upstash](https://upstash.com) | Redis rate limiting | 10K commands/day |
+| [Railway](https://railway.app) | API hosting | $5/month credit |
+| [Vercel](https://vercel.com) | Next.js hosting | Hobby tier free |
 
 ---
 
@@ -255,7 +276,7 @@ These services are optional for local development but required for full function
 | Warning | Yellow | `#EAB308` |
 | Error | Red | `#DC2626` |
 
-**Typography**: Inter (Latin/Cyrillic), Noto Sans Arabic (RTL), JetBrains Mono (code).
+**Typography**: Inter (Latin), with JetBrains Mono for code.
 
 ---
 

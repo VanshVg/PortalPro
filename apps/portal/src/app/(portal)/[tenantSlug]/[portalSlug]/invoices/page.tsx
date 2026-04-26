@@ -1,9 +1,10 @@
+import { Suspense } from "react";
 import { prisma } from "@portalpro/database";
 import { auth } from "@/auth";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, FileText, CheckCircle2, Clock, AlertCircle, XCircle } from "lucide-react";
-import { Card, CardContent } from "@portalpro/ui";
+import { Card, CardContent, Skeleton } from "@portalpro/ui";
 
 interface Props {
   params: { tenantSlug: string; portalSlug: string };
@@ -11,10 +12,7 @@ interface Props {
 
 export const metadata = { title: "Invoices — Portal" };
 
-const STATUS_CONFIG_MAP: Record<
-  string,
-  { label: string; color: string; icon: React.ElementType }
-> = {
+const STATUS_CONFIG_MAP: Record<string, { label: string; color: string; icon: React.ElementType }> = {
   DRAFT: { label: "Draft", color: "bg-neutral-100 text-neutral-500", icon: FileText },
   SENT: { label: "Payment Due", color: "bg-blue-100 text-blue-700", icon: Clock },
   PAID: { label: "Paid", color: "bg-green-100 text-green-700", icon: CheckCircle2 },
@@ -23,11 +21,7 @@ const STATUS_CONFIG_MAP: Record<
 };
 
 function getStatusConfig(status: string) {
-  return STATUS_CONFIG_MAP[status] ?? {
-    label: status,
-    color: "bg-neutral-100 text-neutral-500",
-    icon: FileText,
-  };
+  return STATUS_CONFIG_MAP[status] ?? { label: status, color: "bg-neutral-100 text-neutral-500", icon: FileText };
 }
 
 function formatCurrency(amount: number, currency: string): string {
@@ -42,37 +36,10 @@ export default async function PortalInvoicesPage({ params }: Props) {
   const session = await auth();
   if (!session?.user) notFound();
 
-  const portal = await prisma.clientPortal.findFirst({
-    where: {
-      slug: params.portalSlug,
-      tenant: { slug: params.tenantSlug },
-    },
-    select: {
-      id: true,
-      name: true,
-      tenant: {
-        select: {
-          invoices: {
-            orderBy: { createdAt: "desc" },
-          },
-        },
-      },
-    },
-  });
-
-  if (!portal) notFound();
-
-  const invoices = portal.tenant.invoices;
-
-  const outstandingTotal = invoices
-    .filter((inv) => ["SENT", "OVERDUE"].includes(inv.status))
-    .reduce((sum, inv) => sum + Number(inv.amount), 0);
-
   const portalBase = `/${params.tenantSlug}/${params.portalSlug}`;
 
   return (
     <div className="space-y-8">
-      {/* Back */}
       <div>
         <Link
           href={portalBase}
@@ -84,7 +51,35 @@ export default async function PortalInvoicesPage({ params }: Props) {
         <h1 className="text-2xl font-bold text-neutral-800">Invoices</h1>
       </div>
 
-      {/* Summary */}
+      <Suspense fallback={<InvoiceListSkeleton />}>
+        <InvoiceList params={params} />
+      </Suspense>
+    </div>
+  );
+}
+
+async function InvoiceList({ params }: { params: { tenantSlug: string; portalSlug: string } }) {
+  const portal = await prisma.clientPortal.findFirst({
+    where: { slug: params.portalSlug, tenant: { slug: params.tenantSlug } },
+    select: {
+      id: true,
+      tenant: {
+        select: {
+          invoices: { orderBy: { createdAt: "desc" } },
+        },
+      },
+    },
+  });
+  if (!portal) notFound();
+
+  const invoices = portal.tenant.invoices;
+
+  const outstandingTotal = invoices
+    .filter((inv) => ["SENT", "OVERDUE"].includes(inv.status))
+    .reduce((sum, inv) => sum + Number(inv.amount), 0);
+
+  return (
+    <>
       {invoices.length > 0 && (
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
           <div className="rounded-xl border border-neutral-200 bg-white p-5">
@@ -106,7 +101,6 @@ export default async function PortalInvoicesPage({ params }: Props) {
         </div>
       )}
 
-      {/* Invoice list */}
       {invoices.length === 0 ? (
         <Card>
           <CardContent className="py-16 text-center">
@@ -125,10 +119,7 @@ export default async function PortalInvoicesPage({ params }: Props) {
             const isPayable = ["SENT", "OVERDUE"].includes(inv.status) && inv.stripeLink;
 
             return (
-              <div
-                key={inv.id}
-                className="rounded-xl border border-neutral-200 bg-white p-5"
-              >
+              <div key={inv.id} className="rounded-xl border border-neutral-200 bg-white p-5">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
@@ -160,11 +151,7 @@ export default async function PortalInvoicesPage({ params }: Props) {
                         })}
                       </span>
                       {inv.dueDate && (
-                        <span
-                          className={
-                            inv.status === "OVERDUE" ? "text-red-500 font-medium" : ""
-                          }
-                        >
+                        <span className={inv.status === "OVERDUE" ? "text-red-500 font-medium" : ""}>
                           Due{" "}
                           {new Date(inv.dueDate).toLocaleDateString("en-GB", {
                             day: "numeric",
@@ -190,7 +177,6 @@ export default async function PortalInvoicesPage({ params }: Props) {
                     )}
                   </div>
 
-                  {/* Pay button */}
                   {isPayable && (
                     <a
                       href={inv.stripeLink!}
@@ -208,6 +194,36 @@ export default async function PortalInvoicesPage({ params }: Props) {
           })}
         </div>
       )}
-    </div>
+    </>
+  );
+}
+
+function InvoiceListSkeleton() {
+  return (
+    <>
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <div key={i} className="rounded-xl border border-neutral-200 bg-white p-5 space-y-2">
+            <Skeleton className="h-3 w-24" />
+            <Skeleton className="h-7 w-20" />
+          </div>
+        ))}
+      </div>
+      <div className="space-y-3">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <div key={i} className="rounded-xl border border-neutral-200 bg-white p-5 space-y-3">
+            <div className="flex items-center gap-2">
+              <Skeleton className="h-5 w-24 rounded-full" />
+              <Skeleton className="h-3 w-16" />
+            </div>
+            <Skeleton className="h-8 w-32" />
+            <div className="flex gap-4">
+              <Skeleton className="h-3 w-28" />
+              <Skeleton className="h-3 w-24" />
+            </div>
+          </div>
+        ))}
+      </div>
+    </>
   );
 }

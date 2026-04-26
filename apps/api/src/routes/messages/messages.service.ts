@@ -1,6 +1,9 @@
 import { prisma } from "@portalpro/database";
 import { NotFoundError, ForbiddenError } from "@portalpro/types";
 import { broadcastNewMessage } from "../../lib/socket";
+import { sendNewMessageEmail } from "@portalpro/email";
+import { logger } from "../../lib/logger";
+import { PORTAL_URL, AGENCY_URL } from "../../lib/env";
 import type { MessageResponse, UserResponse, CreateMessageInput } from "@portalpro/types";
 
 // ===== Serializer =====
@@ -191,7 +194,110 @@ export async function sendMessage(
 
   const response = toMessageResponse(message);
   broadcastNewMessage(projectId, response);
+
+  // Fire-and-forget: notify other project participants about the new top-level message
+  if (!input.threadId) {
+    void notifyNewMessage(tenantId, projectId, authorId, response).catch((err: unknown) => {
+      logger.warn({ err, projectId }, "Failed to send new message notifications");
+    });
+  }
+
   return response;
+}
+
+/**
+ * Determines recipients and fires email notifications for a new message.
+ * Agency users are notified when a portal client sends, and vice versa.
+ */
+async function notifyNewMessage(
+  tenantId: string,
+  projectId: string,
+  authorId: string,
+  message: MessageResponse,
+): Promise<void> {
+  // Load project + portal + sender info in parallel
+  const [project, sender] = await Promise.all([
+    prisma.project.findUnique({
+      where: { id: projectId },
+      select: {
+        name: true,
+        clientPortalId: true,
+        clientPortal: {
+          select: {
+            id: true,
+            slug: true,
+            tenant: { select: { slug: true } },
+            access: {
+              select: { user: { select: { id: true, name: true, email: true } } },
+            },
+          },
+        },
+      },
+    }),
+    prisma.user.findUnique({
+      where: { id: authorId },
+      select: { id: true, name: true, tenantMembers: { select: { tenantId: true }, take: 1 } },
+    }),
+  ]);
+
+  if (!project || !sender) return;
+
+  const isAgencyUser = sender.tenantMembers.some((m) => m.tenantId === tenantId);
+  const messagePreview =
+    message.content.length > 120 ? `${message.content.slice(0, 120)}…` : message.content;
+
+  if (isAgencyUser && project.clientPortal) {
+    // Agency sent → notify portal (client) users
+    const portal = project.clientPortal;
+    const tenantSlug = portal.tenant.slug;
+    const portalSlug = portal.slug;
+    const messagesUrl = `${PORTAL_URL}/${tenantSlug}/${portalSlug}/projects/${projectId}/messages`;
+
+    const recipients = portal.access
+      .map((a) => a.user)
+      .filter((u) => u.id !== authorId);
+
+    await Promise.allSettled(
+      recipients.map((recipient) =>
+        sendNewMessageEmail({
+          to: recipient.email,
+          recipientName: recipient.name,
+          senderName: sender.name,
+          projectName: project.name,
+          messagePreview,
+          messagesUrl,
+          isPortalUser: true,
+        }),
+      ),
+    );
+  } else {
+    // Portal client sent → notify all agency team members for this tenant
+    const tenantMembers = await prisma.tenantMember.findMany({
+      where: { tenantId, role: { in: ["OWNER", "ADMIN", "EDITOR"] } },
+      select: { user: { select: { id: true, name: true, email: true } } },
+    });
+
+    const projectPath = `/projects/${projectId}`;
+    const messagesUrl = `${AGENCY_URL}${projectPath}`;
+
+    const recipients = tenantMembers
+      .map((m) => m.user)
+      .filter((u) => u.id !== authorId);
+
+    await Promise.allSettled(
+      recipients.map((recipient) =>
+        sendNewMessageEmail({
+          to: recipient.email,
+          recipientName: recipient.name,
+          senderName: sender.name,
+          projectName: project.name,
+          messagePreview,
+          messagesUrl,
+          isPortalUser: false,
+        }),
+      ),
+    );
+  }
 }
 
 /**

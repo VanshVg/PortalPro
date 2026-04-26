@@ -13,3 +13,5 @@ export const SMTP_FROM = process.env.SMTP_FROM ?? "PortalPro <noreply@portalpro.
 // ── App URLs ─────────────────────────────────────────────────────────────────
 /** Canonical agency app URL — used in email links. */
 export const AGENCY_URL = process.env.AUTH_URL ?? "http://localhost:3000";
+/** Canonical portal app URL — used in message notification links. */
+export const PORTAL_URL = process.env.PORTAL_URL ?? "http://localhost:3001";

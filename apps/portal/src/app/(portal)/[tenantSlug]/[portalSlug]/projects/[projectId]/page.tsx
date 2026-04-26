@@ -1,14 +1,16 @@
+import { Suspense } from "react";
 import { prisma } from "@portalpro/database";
 import { auth } from "@/auth";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { Card, CardContent, CardHeader, CardTitle } from "@portalpro/ui";
+import { Card, CardContent, CardHeader, CardTitle, Skeleton } from "@portalpro/ui";
 import {
   CheckCircle2,
   Circle,
   Clock,
   AlertCircle,
   ArrowLeft,
+  Folder,
 } from "lucide-react";
 import { PortalMessagesLink } from "@/components/PortalMessagesLink";
 import { DeliverableReview } from "@/components/DeliverableReview";
@@ -57,58 +59,70 @@ export default async function PortalProjectPage({ params }: Props) {
   const session = await auth();
   if (!session?.user) notFound();
 
-  // Verify portal & project access
-  const portal = await prisma.clientPortal.findFirst({
-    where: {
-      slug: params.portalSlug,
-      tenant: { slug: params.tenantSlug },
-    },
-    select: { id: true, name: true },
-  });
-  if (!portal) notFound();
+  const portalBase = `/${params.tenantSlug}/${params.portalSlug}`;
 
-  const project = await prisma.project.findUnique({
-    where: { id: params.projectId },
-    include: {
-      milestones: {
-        include: {
-          tasks: {
-            select: {
-              id: true,
-              title: true,
-              status: true,
-              priority: true,
-              dueDate: true,
+  return (
+    <div className="space-y-8">
+      {/* Back link renders immediately — built from URL params, no DB needed */}
+      <div>
+        <Link
+          href={portalBase}
+          className="inline-flex items-center gap-1.5 text-sm text-neutral-500 hover:text-neutral-800 transition-colors mb-4"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back to overview
+        </Link>
+      </div>
+
+      {/* Project header + progress card + milestones + tasks */}
+      <Suspense fallback={<ProjectDetailSkeleton />}>
+        <ProjectDetail params={params} userId={session.user.id} portalBase={portalBase} />
+      </Suspense>
+    </div>
+  );
+}
+
+async function ProjectDetail({
+  params,
+  userId,
+  portalBase,
+}: {
+  params: { tenantSlug: string; portalSlug: string; projectId: string };
+  userId: string;
+  portalBase: string;
+}) {
+  // Parallelise portal verification + project data + sidebar data
+  const [portal, project, unreadMessageCount, deliverables] = await Promise.all([
+    prisma.clientPortal.findFirst({
+      where: { slug: params.portalSlug, tenant: { slug: params.tenantSlug } },
+      select: { id: true },
+    }),
+    prisma.project.findUnique({
+      where: { id: params.projectId },
+      include: {
+        milestones: {
+          include: {
+            tasks: {
+              select: { id: true, title: true, status: true, priority: true, dueDate: true },
+              orderBy: { sortOrder: "asc" },
             },
-            orderBy: { sortOrder: "asc" },
           },
+          orderBy: { sortOrder: "asc" },
         },
-        orderBy: { sortOrder: "asc" },
-      },
-      tasks: {
-        where: { milestoneId: null },
-        select: {
-          id: true,
-          title: true,
-          status: true,
-          priority: true,
-          dueDate: true,
+        tasks: {
+          where: { milestoneId: null },
+          select: { id: true, title: true, status: true, priority: true, dueDate: true },
+          orderBy: { sortOrder: "asc" },
         },
-        orderBy: { sortOrder: "asc" },
+        _count: { select: { tasks: true } },
       },
-      _count: { select: { tasks: true } },
-    },
-  });
-
-  if (!project || project.clientPortalId !== portal.id) notFound();
-
-  const [unreadMessageCount, deliverables] = await Promise.all([
+    }),
     prisma.message.count({
       where: {
         projectId: params.projectId,
         threadId: null,
         isRead: false,
-        authorId: { not: session.user.id },
+        authorId: { not: userId },
       },
     }),
     prisma.deliverable.findMany({
@@ -125,50 +139,36 @@ export default async function PortalProjectPage({ params }: Props) {
     }),
   ]);
 
-  const allTasks = [
-    ...project.milestones.flatMap((m) => m.tasks),
-    ...project.tasks,
-  ];
-  const doneCount = allTasks.filter((t) => t.status === "DONE").length;
-  const progress =
-    allTasks.length === 0 ? 0 : Math.round((doneCount / allTasks.length) * 100);
+  if (!portal || !project || project.clientPortalId !== portal.id) notFound();
 
-  const portalBase = `/${params.tenantSlug}/${params.portalSlug}`;
+  const allTasks = [...project.milestones.flatMap((m) => m.tasks), ...project.tasks];
+  const doneCount = allTasks.filter((t) => t.status === "DONE").length;
+  const progress = allTasks.length === 0 ? 0 : Math.round((doneCount / allTasks.length) * 100);
 
   return (
-    <div className="space-y-8">
-      {/* Back + breadcrumb */}
-      <div>
-        <Link
-          href={portalBase}
-          className="inline-flex items-center gap-1.5 text-sm text-neutral-500 hover:text-neutral-800 transition-colors mb-4"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Back to overview
-        </Link>
-
-        <div className="flex items-start justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-neutral-800">{project.name}</h1>
-            {project.description && (
-              <p className="mt-1 text-sm text-neutral-500 max-w-2xl">{project.description}</p>
-            )}
-          </div>
-          <span
-            className={[
-              "inline-flex items-center rounded-full px-3 py-1 text-xs font-medium",
-              project.status === "ACTIVE"
-                ? "bg-green-100 text-green-700"
-                : project.status === "ON_HOLD"
-                  ? "bg-amber-100 text-amber-700"
-                  : project.status === "COMPLETED"
-                    ? "bg-blue-100 text-blue-700"
-                    : "bg-neutral-100 text-neutral-600",
-            ].join(" ")}
-          >
-            {project.status.replace("_", " ")}
-          </span>
+    <>
+      {/* Project header */}
+      <div className="flex items-start justify-between -mt-6">
+        <div>
+          <h1 className="text-2xl font-bold text-neutral-800">{project.name}</h1>
+          {project.description && (
+            <p className="mt-1 text-sm text-neutral-500 max-w-2xl">{project.description}</p>
+          )}
         </div>
+        <span
+          className={[
+            "inline-flex items-center rounded-full px-3 py-1 text-xs font-medium flex-shrink-0 ml-4",
+            project.status === "ACTIVE"
+              ? "bg-green-100 text-green-700"
+              : project.status === "ON_HOLD"
+                ? "bg-amber-100 text-amber-700"
+                : project.status === "COMPLETED"
+                  ? "bg-blue-100 text-blue-700"
+                  : "bg-neutral-100 text-neutral-600",
+          ].join(" ")}
+        >
+          {project.status.replace("_", " ")}
+        </span>
       </div>
 
       {/* Overall progress */}
@@ -198,9 +198,7 @@ export default async function PortalProjectPage({ params }: Props) {
         <div>
           <h2 className="text-lg font-semibold text-neutral-800 mb-4">Milestones</h2>
 
-          {/* Horizontal timeline bar */}
           <div className="relative mb-6">
-            {/* Track */}
             <div className="h-1.5 bg-neutral-100 rounded-full overflow-hidden">
               <div
                 className="h-full rounded-full transition-all duration-500"
@@ -219,7 +217,6 @@ export default async function PortalProjectPage({ params }: Props) {
               />
             </div>
 
-            {/* Milestone dots */}
             <div className="flex justify-between mt-3">
               {project.milestones.map((m) => {
                 const mDone = m.tasks.filter((t) => t.status === "DONE").length;
@@ -230,18 +227,14 @@ export default async function PortalProjectPage({ params }: Props) {
                     <div
                       className={[
                         "h-3 w-3 rounded-full border-2",
-                        m.isCompleted
-                          ? "border-green-500 bg-green-500"
-                          : "border-neutral-300 bg-white",
+                        m.isCompleted ? "border-green-500 bg-green-500" : "border-neutral-300 bg-white",
                       ].join(" ")}
                     />
                     <span className="text-[10px] text-neutral-500 font-medium truncate max-w-[80px] text-center">
                       {m.title}
                     </span>
                     {mTotal > 0 && (
-                      <span className="text-[9px] text-neutral-400">
-                        {mProgress}%
-                      </span>
+                      <span className="text-[9px] text-neutral-400">{mProgress}%</span>
                     )}
                   </div>
                 );
@@ -249,7 +242,6 @@ export default async function PortalProjectPage({ params }: Props) {
             </div>
           </div>
 
-          {/* Milestone cards */}
           <div className="space-y-4">
             {project.milestones.map((m) => {
               const mDone = m.tasks.filter((t) => t.status === "DONE").length;
@@ -266,9 +258,7 @@ export default async function PortalProjectPage({ params }: Props) {
                         ) : (
                           <Circle className="h-4 w-4 text-neutral-300 flex-shrink-0" />
                         )}
-                        <CardTitle
-                          className={m.isCompleted ? "text-neutral-400 line-through" : ""}
-                        >
+                        <CardTitle className={m.isCompleted ? "text-neutral-400 line-through" : ""}>
                           {m.title}
                         </CardTitle>
                       </div>
@@ -283,7 +273,6 @@ export default async function PortalProjectPage({ params }: Props) {
                       )}
                     </div>
 
-                    {/* Milestone progress bar */}
                     {mTotal > 0 && (
                       <div className="mt-2">
                         <div className="flex items-center justify-between text-[10px] text-neutral-400 mb-1">
@@ -303,7 +292,6 @@ export default async function PortalProjectPage({ params }: Props) {
                     )}
                   </CardHeader>
 
-                  {/* Task list (read-only) */}
                   {m.tasks.length > 0 && (
                     <CardContent className="p-0">
                       <div className="divide-y divide-neutral-50">
@@ -314,10 +302,7 @@ export default async function PortalProjectPage({ params }: Props) {
                             task.status !== "DONE" &&
                             new Date(task.dueDate) < new Date();
                           return (
-                            <div
-                              key={task.id}
-                              className="flex items-center gap-3 px-6 py-2.5"
-                            >
+                            <div key={task.id} className="flex items-center gap-3 px-6 py-2.5">
                               <Icon
                                 className={`h-3.5 w-3.5 flex-shrink-0 ${STATUS_COLOR[task.status] ?? ""}`}
                               />
@@ -373,38 +358,27 @@ export default async function PortalProjectPage({ params }: Props) {
         </div>
       )}
 
-      {/* Unassigned tasks (no milestone) */}
+      {/* Unassigned tasks */}
       {project.tasks.length > 0 && (
         <div>
-          <h2 className="text-lg font-semibold text-neutral-800 mb-4">
-            Other Tasks
-          </h2>
+          <h2 className="text-lg font-semibold text-neutral-800 mb-4">Other Tasks</h2>
           <Card>
             <CardContent className="p-0">
               <div className="divide-y divide-neutral-100">
                 {project.tasks.map((task) => {
                   const Icon = STATUS_ICON[task.status] ?? Circle;
                   return (
-                    <div
-                      key={task.id}
-                      className="flex items-center gap-3 px-6 py-3"
-                    >
-                      <Icon
-                        className={`h-3.5 w-3.5 flex-shrink-0 ${STATUS_COLOR[task.status] ?? ""}`}
-                      />
+                    <div key={task.id} className="flex items-center gap-3 px-6 py-3">
+                      <Icon className={`h-3.5 w-3.5 flex-shrink-0 ${STATUS_COLOR[task.status] ?? ""}`} />
                       <span
                         className={[
                           "flex-1 text-sm",
-                          task.status === "DONE"
-                            ? "text-neutral-400 line-through"
-                            : "text-neutral-700",
+                          task.status === "DONE" ? "text-neutral-400 line-through" : "text-neutral-700",
                         ].join(" ")}
                       >
                         {task.title}
                       </span>
-                      <span className="text-xs text-neutral-400">
-                        {STATUS_LABEL[task.status]}
-                      </span>
+                      <span className="text-xs text-neutral-400">{STATUS_LABEL[task.status]}</span>
                     </div>
                   );
                 })}
@@ -427,7 +401,7 @@ export default async function PortalProjectPage({ params }: Props) {
         </Card>
       )}
 
-      {/* Deliverables for client review */}
+      {/* Deliverables */}
       {deliverables.length > 0 && (
         <DeliverableReview
           deliverables={deliverables.map((d) => ({
@@ -441,13 +415,87 @@ export default async function PortalProjectPage({ params }: Props) {
         />
       )}
 
-      {/* Messages link — shows unread dot when new messages arrive */}
-      <PortalMessagesLink
-        projectId={project.id}
-        href={`${portalBase}/projects/${params.projectId}/messages`}
-        initialUnread={unreadMessageCount}
-        currentUserId={session.user.id}
-      />
-    </div>
+      {/* Quick links: Files + Messages */}
+      <div className="grid gap-3 sm:grid-cols-2">
+        <Link
+          href={`${portalBase}/projects/${params.projectId}/files`}
+          className="flex items-center gap-3 rounded-xl border border-neutral-200 bg-white p-4 hover:border-neutral-300 hover:shadow-sm transition-all"
+        >
+          <div
+            className="h-10 w-10 rounded-lg flex items-center justify-center flex-shrink-0"
+            style={{ backgroundColor: "var(--portal-primary-light, #f0f7ff)" }}
+          >
+            <Folder className="h-5 w-5" style={{ color: "var(--portal-primary, #1B4D6E)" }} />
+          </div>
+          <div>
+            <p className="text-sm font-semibold text-neutral-800">Project Files</p>
+            <p className="text-xs text-neutral-400">View and download shared files</p>
+          </div>
+        </Link>
+
+        <PortalMessagesLink
+          projectId={project.id}
+          href={`${portalBase}/projects/${params.projectId}/messages`}
+          initialUnread={unreadMessageCount}
+          currentUserId={userId}
+        />
+      </div>
+    </>
+  );
+}
+
+function ProjectDetailSkeleton() {
+  return (
+    <>
+      <div className="flex items-start justify-between -mt-6">
+        <div className="space-y-2">
+          <Skeleton className="h-8 w-64" />
+          <Skeleton className="h-4 w-96" />
+        </div>
+        <Skeleton className="h-6 w-20 rounded-full ml-4" />
+      </div>
+
+      <div className="rounded-xl border border-neutral-200 bg-white p-6 space-y-3">
+        <div className="flex items-center justify-between">
+          <Skeleton className="h-4 w-32" />
+          <Skeleton className="h-8 w-12" />
+        </div>
+        <Skeleton className="h-3 w-full rounded-full" />
+        <Skeleton className="h-3 w-40" />
+      </div>
+
+      <div>
+        <Skeleton className="h-6 w-28 mb-4" />
+        <Skeleton className="h-1.5 w-full rounded-full mb-4" />
+        <div className="space-y-4">
+          {Array.from({ length: 2 }).map((_, i) => (
+            <div key={i} className="rounded-xl border border-neutral-200 bg-white p-5 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Skeleton className="h-4 w-4 rounded-full" />
+                  <Skeleton className="h-5 w-40" />
+                </div>
+                <Skeleton className="h-3 w-16" />
+              </div>
+              <Skeleton className="h-1 w-full rounded-full" />
+              <div className="space-y-2 pt-2">
+                {Array.from({ length: 3 }).map((_, j) => (
+                  <div key={j} className="flex items-center gap-3 py-1">
+                    <Skeleton className="h-3.5 w-3.5 rounded-full" />
+                    <Skeleton className="h-4 flex-1" />
+                    <Skeleton className="h-4 w-16" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-2">
+        <Skeleton className="h-[72px] rounded-xl" />
+        <Skeleton className="h-[72px] rounded-xl" />
+      </div>
+    </>
   );
 }
