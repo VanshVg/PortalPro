@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, Button, Inpu
 import Image from "next/image";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useState, useTransition, Suspense } from "react";
 import { loginAction, resendVerificationAction } from "@/lib/auth-actions";
 
 const ERROR_MESSAGES: Record<string, string> = {
@@ -13,6 +13,14 @@ const ERROR_MESSAGES: Record<string, string> = {
 };
 
 export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginContent />
+    </Suspense>
+  );
+}
+
+function LoginContent() {
   const searchParams = useSearchParams();
   const verified = searchParams.get("verified") === "true";
   const passwordReset = searchParams.get("reset") === "true";
@@ -170,3 +178,4 @@ export default function LoginPage() {
     </Card>
   );
 }
+

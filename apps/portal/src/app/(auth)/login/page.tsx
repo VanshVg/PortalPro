@@ -3,11 +3,19 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, Button, Input } from "@portalpro/ui";
 import Image from "next/image";
 import Link from "next/link";
-import { useState, useTransition } from "react";
+import { useState, useTransition, Suspense } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 export default function PortalLoginPage() {
+  return (
+    <Suspense>
+      <PortalLoginContent />
+    </Suspense>
+  );
+}
+
+function PortalLoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const successMessage = searchParams.get("message");
