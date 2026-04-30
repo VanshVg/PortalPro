@@ -119,11 +119,14 @@ app.use("/api/v1", apiRouter);
 app.use(errorMiddleware);
 
 // ===== Start Server =====
-const httpServer = createServer(app);
-initSocketServer(httpServer);
-
-httpServer.listen(PORT, () => {
-  logger.info({ port: PORT }, "PortalPro API server started");
-});
+// Vercel runs this file as a serverless function — skip listening and Socket.io.
+// Socket.io requires a persistent HTTP server which serverless does not support.
+if (!process.env.VERCEL) {
+  const httpServer = createServer(app);
+  initSocketServer(httpServer);
+  httpServer.listen(PORT, () => {
+    logger.info({ port: PORT }, "PortalPro API server started");
+  });
+}
 
 export default app;
