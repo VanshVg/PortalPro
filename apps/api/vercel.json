@@ -12,5 +12,6 @@
       "dest": "src/index.ts"
     }
   ],
-  "installCommand": "cd ../.. && pnpm install --frozen-lockfile && pnpm --filter @portalpro/database db:generate && pnpm --filter @portalpro/email build"
+  "installCommand": "cd ../.. && pnpm install --frozen-lockfile && pnpm --filter @portalpro/database db:generate && pnpm --filter @portalpro/email build",
+  "buildCommand": "cd ../.. && pnpm build --filter=@portalpro/api"
 }
