@@ -1,7 +1,7 @@
 import { prisma } from "@portalpro/database";
 import { NotFoundError, ForbiddenError } from "@portalpro/types";
 import { broadcastNewMessage } from "../../lib/socket";
-import { sendNewMessageEmail } from "@portalpro/email";
+import { sendNewMessageEmail } from "@portalpro/email/server";
 import { logger } from "../../lib/logger";
 import { PORTAL_URL, AGENCY_URL } from "../../lib/env";
 import type { MessageResponse, UserResponse, CreateMessageInput } from "@portalpro/types";

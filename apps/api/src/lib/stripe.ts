@@ -1,13 +1,15 @@
 import Stripe from "stripe";
 import { STRIPE_SECRET_KEY } from "./env";
 
+type StripeClient = InstanceType<typeof Stripe>;
+
 /**
  * Lazily-initialised Stripe client.
  * Returns null when STRIPE_SECRET_KEY is not configured (dev/test without payments).
  */
-let _stripe: Stripe | null = null;
+let _stripe: StripeClient | null = null;
 
-export function getStripe(): Stripe | null {
+export function getStripe(): StripeClient | null {
   if (!STRIPE_SECRET_KEY) return null;
   if (!_stripe) {
     _stripe = new Stripe(STRIPE_SECRET_KEY, { apiVersion: "2026-03-25.dahlia" });

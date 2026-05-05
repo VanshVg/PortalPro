@@ -8,7 +8,7 @@ import type {
   InvoiceLineItem,
 } from "@portalpro/types";
 import { createPaymentLink } from "../../lib/stripe";
-import { sendInvoiceEmail, sendPaymentReceivedEmail } from "@portalpro/email";
+import { sendInvoiceEmail, sendPaymentReceivedEmail } from "@portalpro/email/server";
 import { logger } from "../../lib/logger";
 
 /**

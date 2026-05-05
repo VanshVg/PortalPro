@@ -7,4 +7,9 @@ export {
   sendPasswordResetEmail,
   sendTeamInviteEmail,
   sendClientInviteEmail,
+  sendDeliverableSubmittedEmail,
+  sendDeliverableReviewedEmail,
+  sendInvoiceEmail,
+  sendPaymentReceivedEmail,
+  sendNewMessageEmail,
 } from "./mailer";

@@ -6,7 +6,7 @@ import type {
   UpdateDeliverableInput,
   RequestRevisionInput,
 } from "@portalpro/types";
-import { sendDeliverableSubmittedEmail, sendDeliverableReviewedEmail } from "@portalpro/email";
+import { sendDeliverableSubmittedEmail, sendDeliverableReviewedEmail } from "@portalpro/email/server";
 import { logger } from "../../lib/logger";
 
 /**
