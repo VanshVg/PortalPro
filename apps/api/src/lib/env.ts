@@ -7,13 +7,11 @@
  * In production, env vars are injected by the platform (Vercel/Docker) — dotenv is a no-op.
  */
 import { config } from "dotenv";
-import { resolve, dirname } from "path";
-import { fileURLToPath } from "url";
+import { resolve } from "path";
 
-// Load the root .env file (portalpro/.env) — walks up four levels from apps/api/src/lib/
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-config({ path: resolve(__dirname, "../../../../.env") });
+// Local dev only: load .env from monorepo root (2 levels up from apps/api/).
+// On Vercel/production, env vars are injected by the platform — dotenv is a no-op.
+config({ path: resolve(process.cwd(), "../../.env") });
 
 export const NODE_ENV = process.env.NODE_ENV ?? "development";
 export const IS_PRODUCTION = NODE_ENV === "production";
