@@ -2,6 +2,7 @@ import cors from "cors";
 import express from "express";
 import helmet from "helmet";
 import { createServer } from "http";
+import type Stripe from "stripe";
 
 import { errorMiddleware } from "./middleware/error.middleware";
 import { requestIdMiddleware } from "./middleware/request-id.middleware";
@@ -52,7 +53,7 @@ app.post(
     }
 
     const sig = req.headers["stripe-signature"] as string;
-    let event: import("stripe").Stripe.Event;
+    let event: Stripe.Event;
 
     try {
       event = stripe.webhooks.constructEvent(req.body as Buffer, sig, STRIPE_WEBHOOK_SECRET);
