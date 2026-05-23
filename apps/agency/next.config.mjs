@@ -34,6 +34,32 @@ const nextConfig = {
       ],
     },
   },
+  // Defense-in-depth: serverComponentsExternalPackages sometimes silently fails to
+  // externalize Prisma in monorepos with transpilePackages. Force it at the webpack
+  // level so the package is left as a runtime require() and not inlined into chunks.
+  webpack: (config, { isServer }) => {
+    if (isServer) {
+      const existingExternals = Array.isArray(config.externals)
+        ? config.externals
+        : config.externals
+          ? [config.externals]
+          : [];
+      config.externals = [
+        ({ request }, callback) => {
+          if (
+            request === "@prisma/client" ||
+            request === "@portalpro/database" ||
+            request?.startsWith("@portalpro/database/")
+          ) {
+            return callback(null, "commonjs " + request);
+          }
+          return callback();
+        },
+        ...existingExternals,
+      ];
+    }
+    return config;
+  },
 };
 
 export default nextConfig;
