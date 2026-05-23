@@ -1,1 +1,0 @@
-{"root":["./src/env.ts","./src/index.ts","./src/mailer.ts","./src/server.ts","./src/templates/ClientInvite.tsx","./src/templates/DeliverableNotification.tsx","./src/templates/InvoiceEmail.tsx","./src/templates/NewMessage.tsx","./src/templates/ResetPassword.tsx","./src/templates/TeamInvite.tsx","./src/templates/VerifyEmail.tsx"],"version":"5.7.3"}

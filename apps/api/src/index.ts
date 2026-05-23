@@ -2,7 +2,7 @@ import cors from "cors";
 import express from "express";
 import helmet from "helmet";
 import { createServer } from "http";
-import type Stripe from "stripe";
+import Stripe from "stripe";
 
 import { errorMiddleware } from "./middleware/error.middleware";
 import { requestIdMiddleware } from "./middleware/request-id.middleware";

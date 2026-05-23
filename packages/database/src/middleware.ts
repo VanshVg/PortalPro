@@ -1,4 +1,4 @@
-import { Prisma } from "@prisma/client";
+import { Prisma } from "./generated/client";
 
 /** Models that require tenant-scoped queries. */
 const TENANT_SCOPED_MODELS = [

@@ -1,19 +1,8 @@
 {
-  "version": 2,
-  "builds": [
-    {
-      "src": "src/index.ts",
-      "use": "@vercel/node",
-      "config": {
-        "disableTypecheck": true
-      }
-    }
-  ],
-  "routes": [
-    {
-      "src": "/(.*)",
-      "dest": "src/index.ts"
-    }
-  ],
-  "installCommand": "cd ../.. && pnpm install --frozen-lockfile && pnpm --filter @portalpro/database db:generate && pnpm --filter @portalpro/email build"
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "installCommand": "cd ../.. && pnpm install --frozen-lockfile",
+  "buildCommand": "cd ../.. && pnpm build --filter=@portalpro/api",
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/api/index" }
+  ]
 }

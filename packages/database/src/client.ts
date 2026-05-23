@@ -1,4 +1,4 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient } from "./generated/client";
 import { IS_DEVELOPMENT, IS_PRODUCTION } from "./env";
 
 /**
