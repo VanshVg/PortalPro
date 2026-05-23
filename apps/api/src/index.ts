@@ -53,7 +53,10 @@ app.post(
     }
 
     const sig = req.headers["stripe-signature"] as string;
-    let event: Stripe.Event;
+    // Derive the event type from constructEvent's return signature so this compiles
+    // under both moduleResolution: "bundler" (local tsc) and node-style resolution
+    // (used by @vercel/node), avoiding `Stripe.Event` namespace lookup.
+    let event: ReturnType<InstanceType<typeof Stripe>["webhooks"]["constructEvent"]>;
 
     try {
       event = stripe.webhooks.constructEvent(req.body as Buffer, sig, STRIPE_WEBHOOK_SECRET);
